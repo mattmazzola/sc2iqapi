@@ -1,0 +1,31 @@
+{
+  "name": "sc2iqapi",
+  "version": "0.0.0",
+  "description": "SC2IQ API",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mattmazzola/sc2iqapi"
+  },
+  "keywords": [
+    "StarCraft"
+  ],
+  "author": "Matt Mazzola",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mattmazzola/sc2iqapi/issues"
+  },
+  "homepage": "https://github.com/mattmazzola/sc2iqapi",
+  "dependencies": {
+    "babel": "^5.6.14",
+    "koa": "^0.21.0",
+    "koa-bodyparser": "^2.0.0",
+    "koa-logger": "^1.2.2",
+    "koa-response-time": "^1.0.2",
+    "koa-route": "^2.4.1",
+    "koa-router": "^5.1.2"
+  }
+}
