@@ -1,3 +1,5 @@
+import polyfill from "babel/polyfill";
+
 import fs from 'fs';
 import koa from 'koa';
 import bodyParser from 'koa-bodyparser';
@@ -19,22 +21,27 @@ app.use(logger());
 
 let controllersPath = __dirname + '/controllers';
 
-for (let fileName of fs.readdirSync(controllersPath)) {
-  let controllerName = fileName.substring(0, fileName.length - 3);
-  let controller = require(controllersPath + '/' + fileName);
+router.get('/api/assignments', function* (next) {
+  yield next;
+  this.body = 'GET: assignments';
+});
+
+// for (let fileName of fs.readdirSync(controllersPath)) {
+//   let controllerName = fileName.substring(0, fileName.length - 3);
+//   let controller = require(controllersPath + '/' + fileName);
   
-  console.log(`Register Controller: ${controllerName}`);
+//   console.log(`Register Controller: ${controllerName}`);
   
-  for(let property in controller) {
-    let httpMethod = property; /** TODO: Validate */
-    let path = `/api/${controllerName}`;
-    let handler = controller[property];
+//   for(let property in controller) {
+//     let httpMethod = property; /** TODO: Validate */
+//     let path = `/api/${controllerName}`;
+//     let handler = controller[property];
     
-    console.log(`${property}: ${path}`);
+//     console.log(`${property}: ${path}`);
     
-    router[httpMethod](path, handler);
-  }
-}
+//     router[httpMethod](path, handler);
+//   }
+// }
 
 app.init = () => {
   let port = process.env.PORT || 44360;
@@ -43,3 +50,5 @@ app.init = () => {
 };
 
 export default app;
+
+app.init();

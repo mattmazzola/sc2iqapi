@@ -6,6 +6,10 @@ Object.defineProperty(exports, '__esModule', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
+var _babelPolyfill = require('babel/polyfill');
+
+var _babelPolyfill2 = _interopRequireDefault(_babelPolyfill);
+
 var _fs = require('fs');
 
 var _fs2 = _interopRequireDefault(_fs);
@@ -97,43 +101,39 @@ app.use((0, _koaLogger2['default'])());
 
 var controllersPath = __dirname + '/controllers';
 
-var _iteratorNormalCompletion = true;
-var _didIteratorError = false;
-var _iteratorError = undefined;
+router.get('/api/assignments', regeneratorRuntime.mark(function callee$0$0(next) {
+  return regeneratorRuntime.wrap(function callee$0$0$(context$1$0) {
+    while (1) switch (context$1$0.prev = context$1$0.next) {
+      case 0:
+        context$1$0.next = 2;
+        return next;
 
-try {
-  for (var _iterator = _fs2['default'].readdirSync(controllersPath)[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-    var fileName = _step.value;
+      case 2:
+        this.body = 'GET: assignments';
 
-    var controllerName = fileName.substring(0, fileName.length - 3);
-    var controller = require(controllersPath + '/' + fileName);
-
-    console.log('Register Controller: ' + controllerName);
-
-    for (var property in controller) {
-      var httpMethod = property; /** TODO: Validate */
-      var path = '/api/' + controllerName;
-      var handler = controller[property];
-
-      console.log(property + ': ' + path);
-
-      router[httpMethod](path, handler);
+      case 3:
+      case 'end':
+        return context$1$0.stop();
     }
-  }
-} catch (err) {
-  _didIteratorError = true;
-  _iteratorError = err;
-} finally {
-  try {
-    if (!_iteratorNormalCompletion && _iterator['return']) {
-      _iterator['return']();
-    }
-  } finally {
-    if (_didIteratorError) {
-      throw _iteratorError;
-    }
-  }
-}
+  }, callee$0$0, this);
+}));
+
+// for (let fileName of fs.readdirSync(controllersPath)) {
+//   let controllerName = fileName.substring(0, fileName.length - 3);
+//   let controller = require(controllersPath + '/' + fileName);
+
+//   console.log(`Register Controller: ${controllerName}`);
+
+//   for(let property in controller) {
+//     let httpMethod = property; /** TODO: Validate */
+//     let path = `/api/${controllerName}`;
+//     let handler = controller[property];
+
+//     console.log(`${property}: ${path}`);
+
+//     router[httpMethod](path, handler);
+//   }
+// }
 
 app.init = function () {
   var port = process.env.PORT || 44360;
@@ -142,5 +142,7 @@ app.init = function () {
 };
 
 exports['default'] = app;
+
+app.init();
 module.exports = exports['default'];
 //# sourceMappingURL=all.js.map
