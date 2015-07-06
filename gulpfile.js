@@ -6,8 +6,8 @@ var concat = require("gulp-concat");
 gulp.task("default", function () {
   return gulp.src(["src/server.js"])
     .pipe(sourcemaps.init())
-    .pipe(concat("server.js"))
+    .pipe(concat("server2.js"))
     .pipe(babel())
     .pipe(sourcemaps.write("."))
-    .pipe(gulp.dest("./"));
+    .pipe(gulp.dest("dist"));
 });
