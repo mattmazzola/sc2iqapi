@@ -6,6 +6,17 @@ Object.defineProperty(exports, '__esModule', {
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
+// auto init if this app is not being initialized by another module (i.e. using require('./app').init();)
+// if (!module.parent) {
+//   try {
+//     app.init();
+//   }
+//   catch (err) {
+//     console.error(err);
+//     process.exit(1);
+//   }
+// }
+
 var _babelPolyfill = require('babel/polyfill');
 
 var _babelPolyfill2 = _interopRequireDefault(_babelPolyfill);
@@ -30,47 +41,8 @@ var _koaLogger = require('koa-logger');
 
 var _koaLogger2 = _interopRequireDefault(_koaLogger);
 
-var sectionsController = {
-  get: regeneratorRuntime.mark(function get(next) {
-    return regeneratorRuntime.wrap(function get$(context$1$0) {
-      while (1) switch (context$1$0.prev = context$1$0.next) {
-        case 0:
-          context$1$0.next = 2;
-          return next;
-
-        case 2:
-          this.body = 'GET: assignments';
-
-        case 3:
-        case 'end':
-          return context$1$0.stop();
-      }
-    }, get, this);
-  })
-};
-
-exports['default'] = sectionsController;
-
-var assignmentsController = {
-  get: regeneratorRuntime.mark(function get(next) {
-    return regeneratorRuntime.wrap(function get$(context$1$0) {
-      while (1) switch (context$1$0.prev = context$1$0.next) {
-        case 0:
-          context$1$0.next = 2;
-          return next;
-
-        case 2:
-          this.body = 'GET: sections';
-
-        case 3:
-        case 'end':
-          return context$1$0.stop();
-      }
-    }, get, this);
-  })
-};
-
-exports['default'] = assignmentsController;
+require('babel/register');
+var app = require('./server');
 
 var app = (0, _koa2['default'])();
 var router = (0, _koaRouter2['default'])();
@@ -138,11 +110,53 @@ router.get('/api/assignments', regeneratorRuntime.mark(function callee$0$0(next)
 app.init = function () {
   var port = process.env.PORT || 44360;
   app.listen(port);
+  console.log('Running: ' + process.title + ' ' + process.version);
   console.log('Listening on port: ' + port);
 };
 
 exports['default'] = app;
 
 app.init();
+var sectionsController = {
+  get: regeneratorRuntime.mark(function get(next) {
+    return regeneratorRuntime.wrap(function get$(context$1$0) {
+      while (1) switch (context$1$0.prev = context$1$0.next) {
+        case 0:
+          context$1$0.next = 2;
+          return next;
+
+        case 2:
+          this.body = 'GET: assignments';
+
+        case 3:
+        case 'end':
+          return context$1$0.stop();
+      }
+    }, get, this);
+  })
+};
+
+exports['default'] = sectionsController;
+
+var assignmentsController = {
+  get: regeneratorRuntime.mark(function get(next) {
+    return regeneratorRuntime.wrap(function get$(context$1$0) {
+      while (1) switch (context$1$0.prev = context$1$0.next) {
+        case 0:
+          context$1$0.next = 2;
+          return next;
+
+        case 2:
+          this.body = 'GET: sections';
+
+        case 3:
+        case 'end':
+          return context$1$0.stop();
+      }
+    }, get, this);
+  })
+};
+
+exports['default'] = assignmentsController;
 module.exports = exports['default'];
-//# sourceMappingURL=all.js.map
+//# sourceMappingURL=server.js.map

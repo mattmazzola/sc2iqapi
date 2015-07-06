@@ -4,9 +4,9 @@ var babel = require("gulp-babel");
 var concat = require("gulp-concat");
 
 gulp.task("default", function () {
-  return gulp.src(["controllers/**/*.js", "server.js"])
+  return gulp.src(["src/**/*.js"])
     .pipe(sourcemaps.init())
-    .pipe(concat("all.js"))
+    .pipe(concat("server.js"))
     .pipe(babel())
     .pipe(sourcemaps.write("."))
     .pipe(gulp.dest("dist"));

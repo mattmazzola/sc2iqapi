@@ -46,6 +46,7 @@ router.get('/api/assignments', function* (next) {
 app.init = () => {
   let port = process.env.PORT || 44360;
   app.listen(port);
+  console.log(`Running: ${process.title} ${process.version}`);
   console.log(`Listening on port: ${port}`);
 };
 

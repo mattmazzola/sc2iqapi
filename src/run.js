@@ -12,4 +12,3 @@ var app = require('./server');
 //     process.exit(1);
 //   }
 // }
-app.init();
