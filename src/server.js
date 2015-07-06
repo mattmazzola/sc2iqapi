@@ -15,33 +15,10 @@ app.use(function* responseTime(next) {
   var ms = new Date - start;
   this.set('X-Response-Time', ms + 'ms');
 });
-app.use(router.routes());
-app.use(router.allowedMethods());
-app.use(logger());
-
-let controllersPath = __dirname + '/controllers';
-
-router.get('/api/assignments', function* (next) {
-  yield next;
-  this.body = 'GET: assignments';
+app.use(function *(){
+  this.body = 'Hello World';
 });
-
-// for (let fileName of fs.readdirSync(controllersPath)) {
-//   let controllerName = fileName.substring(0, fileName.length - 3);
-//   let controller = require(controllersPath + '/' + fileName);
-  
-//   console.log(`Register Controller: ${controllerName}`);
-  
-//   for(let property in controller) {
-//     let httpMethod = property; /** TODO: Validate */
-//     let path = `/api/${controllerName}`;
-//     let handler = controller[property];
-    
-//     console.log(`${property}: ${path}`);
-    
-//     router[httpMethod](path, handler);
-//   }
-// }
+app.use(logger());
 
 app.init = () => {
   let port = process.env.PORT || 44360;
@@ -49,7 +26,5 @@ app.init = () => {
   console.log(`Running: ${process.title} ${process.version}`);
   console.log(`Listening on port: ${port}`);
 };
-
-export default app;
 
 app.init();
