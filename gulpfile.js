@@ -9,5 +9,5 @@ gulp.task("default", function () {
     .pipe(concat("server.js"))
     .pipe(babel())
     .pipe(sourcemaps.write("."))
-    .pipe(gulp.dest("dist"));
+    .pipe(gulp.dest("./"));
 });
