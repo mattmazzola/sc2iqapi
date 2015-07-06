@@ -1,9 +1,5 @@
 'use strict';
 
-Object.defineProperty(exports, '__esModule', {
-  value: true
-});
-
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { 'default': obj }; }
 
 var _babelPolyfill = require('babel/polyfill');
@@ -53,21 +49,10 @@ app.use(regeneratorRuntime.mark(function responseTime(next) {
     }
   }, responseTime, this);
 }));
-app.use(regeneratorRuntime.mark(function callee$0$0() {
-  return regeneratorRuntime.wrap(function callee$0$0$(context$1$0) {
-    while (1) switch (context$1$0.prev = context$1$0.next) {
-      case 0:
-        this.body = 'Hello World';
 
-      case 1:
-      case 'end':
-        return context$1$0.stop();
-    }
-  }, callee$0$0, this);
-}));
+app.use(router.routes());
+app.use(router.allowedMethods());
 app.use((0, _koaLogger2['default'])());
-
-var controllersPath = __dirname + '/controllers';
 
 router.get('/api/assignments', regeneratorRuntime.mark(function callee$0$0(next) {
   return regeneratorRuntime.wrap(function callee$0$0$(context$1$0) {
@@ -86,23 +71,6 @@ router.get('/api/assignments', regeneratorRuntime.mark(function callee$0$0(next)
   }, callee$0$0, this);
 }));
 
-// for (let fileName of fs.readdirSync(controllersPath)) {
-//   let controllerName = fileName.substring(0, fileName.length - 3);
-//   let controller = require(controllersPath + '/' + fileName);
-
-//   console.log(`Register Controller: ${controllerName}`);
-
-//   for(let property in controller) {
-//     let httpMethod = property; /** TODO: Validate */
-//     let path = `/api/${controllerName}`;
-//     let handler = controller[property];
-
-//     console.log(`${property}: ${path}`);
-
-//     router[httpMethod](path, handler);
-//   }
-// }
-
 app.init = function () {
   var port = process.env.PORT || 44360;
   app.listen(port);
@@ -110,8 +78,5 @@ app.init = function () {
   console.log('Listening on port: ' + port);
 };
 
-exports['default'] = app;
-
 app.init();
-module.exports = exports['default'];
 //# sourceMappingURL=server.js.map

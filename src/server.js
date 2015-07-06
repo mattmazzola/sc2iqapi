@@ -15,10 +15,16 @@ app.use(function* responseTime(next) {
   var ms = new Date - start;
   this.set('X-Response-Time', ms + 'ms');
 });
-app.use(function *(){
-  this.body = 'Hello World';
-});
+
+app.use(router.routes());
+app.use(router.allowedMethods());
 app.use(logger());
+
+router.get('/api/assignments', function* (next) {
+  yield next;
+  this.body = 'GET: assignments';
+});
+
 
 app.init = () => {
   let port = process.env.PORT || 44360;
