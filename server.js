@@ -37,7 +37,9 @@ for (let fileName of fs.readdirSync(controllersPath)) {
 }
 
 app.init = () => {
-  app.listen(44360);
+  let port = process.env.PORT || 44360;
+  app.listen(port);
+  console.log(`Listening on port: ${port}`);
 };
 
 export default app;
