@@ -27,5 +27,11 @@
     "koa-response-time": "^1.0.2",
     "koa-route": "^2.4.1",
     "koa-router": "^5.1.2"
+  },
+  "devDependencies": {
+    "gulp": "^3.9.0",
+    "gulp-babel": "^5.1.0",
+    "gulp-concat": "^2.6.0",
+    "gulp-sourcemaps": "^1.5.2"
   }
 }

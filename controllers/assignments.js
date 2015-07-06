@@ -1,8 +1,8 @@
-let controller = {
+let sectionsController = {
   * get(next) {
     yield next;
     this.body = 'GET: assignments';
   }
 };
 
-export default controller;
+export default sectionsController;
