@@ -71,6 +71,23 @@ router.get('/api/assignments', regeneratorRuntime.mark(function callee$0$0(next)
   }, callee$0$0, this);
 }));
 
+router.get('/api/sections', regeneratorRuntime.mark(function callee$0$0(next) {
+  return regeneratorRuntime.wrap(function callee$0$0$(context$1$0) {
+    while (1) switch (context$1$0.prev = context$1$0.next) {
+      case 0:
+        context$1$0.next = 2;
+        return next;
+
+      case 2:
+        this.body = 'GET: sections';
+
+      case 3:
+      case 'end':
+        return context$1$0.stop();
+    }
+  }, callee$0$0, this);
+}));
+
 app.init = function () {
   var port = process.env.PORT || 44360;
   app.listen(port);

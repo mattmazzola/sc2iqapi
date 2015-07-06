@@ -25,6 +25,10 @@ router.get('/api/assignments', function* (next) {
   this.body = 'GET: assignments';
 });
 
+router.get('/api/sections', function* (next) {
+  yield next;
+  this.body = 'GET: sections';
+});
 
 app.init = () => {
   let port = process.env.PORT || 44360;
