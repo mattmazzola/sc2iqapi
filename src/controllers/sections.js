@@ -4,7 +4,7 @@ const controller = {
   getName: '/sections',
   *get(next) {
     yield next;
-    this.body = 'GET: assignments from imported controller';
+    this.body = `GET: assignments from imported controller: ${Guid.raw()}`;
   }
 }
 

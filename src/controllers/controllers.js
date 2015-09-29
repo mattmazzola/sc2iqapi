@@ -1,4 +1,4 @@
-import assignments from './controllers/assignments';
-import sections from './controllers/sections';
+import assignments from './assignments';
+import sections from './sections';
 
 export { assignments, sections };

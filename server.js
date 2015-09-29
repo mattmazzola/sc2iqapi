@@ -10167,351 +10167,7 @@ $__System.registerDynamic("7a", ["79"], true, function(require, exports, module)
   return module.exports;
 });
 
-$__System.registerDynamic("7b", ["72", "7a", "76", "7c", "7d", "3f"], true, function(require, exports, module) {
-  ;
-  var global = this,
-      __define = global.define;
-  global.define = undefined;
-  (function(Buffer, process) {
-    module.exports = Writable;
-    var Buffer = require("72").Buffer;
-    Writable.WritableState = WritableState;
-    var util = require("7a");
-    util.inherits = require("76");
-    var Stream = require("7c");
-    util.inherits(Writable, Stream);
-    function WriteReq(chunk, encoding, cb) {
-      this.chunk = chunk;
-      this.encoding = encoding;
-      this.callback = cb;
-    }
-    function WritableState(options, stream) {
-      var Duplex = require("7d");
-      options = options || {};
-      var hwm = options.highWaterMark;
-      var defaultHwm = options.objectMode ? 16 : 16 * 1024;
-      this.highWaterMark = (hwm || hwm === 0) ? hwm : defaultHwm;
-      this.objectMode = !!options.objectMode;
-      if (stream instanceof Duplex)
-        this.objectMode = this.objectMode || !!options.writableObjectMode;
-      this.highWaterMark = ~~this.highWaterMark;
-      this.needDrain = false;
-      this.ending = false;
-      this.ended = false;
-      this.finished = false;
-      var noDecode = options.decodeStrings === false;
-      this.decodeStrings = !noDecode;
-      this.defaultEncoding = options.defaultEncoding || 'utf8';
-      this.length = 0;
-      this.writing = false;
-      this.corked = 0;
-      this.sync = true;
-      this.bufferProcessing = false;
-      this.onwrite = function(er) {
-        onwrite(stream, er);
-      };
-      this.writecb = null;
-      this.writelen = 0;
-      this.buffer = [];
-      this.pendingcb = 0;
-      this.prefinished = false;
-      this.errorEmitted = false;
-    }
-    function Writable(options) {
-      var Duplex = require("7d");
-      if (!(this instanceof Writable) && !(this instanceof Duplex))
-        return new Writable(options);
-      this._writableState = new WritableState(options, this);
-      this.writable = true;
-      Stream.call(this);
-    }
-    Writable.prototype.pipe = function() {
-      this.emit('error', new Error('Cannot pipe. Not readable.'));
-    };
-    function writeAfterEnd(stream, state, cb) {
-      var er = new Error('write after end');
-      stream.emit('error', er);
-      process.nextTick(function() {
-        cb(er);
-      });
-    }
-    function validChunk(stream, state, chunk, cb) {
-      var valid = true;
-      if (!util.isBuffer(chunk) && !util.isString(chunk) && !util.isNullOrUndefined(chunk) && !state.objectMode) {
-        var er = new TypeError('Invalid non-string/buffer chunk');
-        stream.emit('error', er);
-        process.nextTick(function() {
-          cb(er);
-        });
-        valid = false;
-      }
-      return valid;
-    }
-    Writable.prototype.write = function(chunk, encoding, cb) {
-      var state = this._writableState;
-      var ret = false;
-      if (util.isFunction(encoding)) {
-        cb = encoding;
-        encoding = null;
-      }
-      if (util.isBuffer(chunk))
-        encoding = 'buffer';
-      else if (!encoding)
-        encoding = state.defaultEncoding;
-      if (!util.isFunction(cb))
-        cb = function() {};
-      if (state.ended)
-        writeAfterEnd(this, state, cb);
-      else if (validChunk(this, state, chunk, cb)) {
-        state.pendingcb++;
-        ret = writeOrBuffer(this, state, chunk, encoding, cb);
-      }
-      return ret;
-    };
-    Writable.prototype.cork = function() {
-      var state = this._writableState;
-      state.corked++;
-    };
-    Writable.prototype.uncork = function() {
-      var state = this._writableState;
-      if (state.corked) {
-        state.corked--;
-        if (!state.writing && !state.corked && !state.finished && !state.bufferProcessing && state.buffer.length)
-          clearBuffer(this, state);
-      }
-    };
-    function decodeChunk(state, chunk, encoding) {
-      if (!state.objectMode && state.decodeStrings !== false && util.isString(chunk)) {
-        chunk = new Buffer(chunk, encoding);
-      }
-      return chunk;
-    }
-    function writeOrBuffer(stream, state, chunk, encoding, cb) {
-      chunk = decodeChunk(state, chunk, encoding);
-      if (util.isBuffer(chunk))
-        encoding = 'buffer';
-      var len = state.objectMode ? 1 : chunk.length;
-      state.length += len;
-      var ret = state.length < state.highWaterMark;
-      if (!ret)
-        state.needDrain = true;
-      if (state.writing || state.corked)
-        state.buffer.push(new WriteReq(chunk, encoding, cb));
-      else
-        doWrite(stream, state, false, len, chunk, encoding, cb);
-      return ret;
-    }
-    function doWrite(stream, state, writev, len, chunk, encoding, cb) {
-      state.writelen = len;
-      state.writecb = cb;
-      state.writing = true;
-      state.sync = true;
-      if (writev)
-        stream._writev(chunk, state.onwrite);
-      else
-        stream._write(chunk, encoding, state.onwrite);
-      state.sync = false;
-    }
-    function onwriteError(stream, state, sync, er, cb) {
-      if (sync)
-        process.nextTick(function() {
-          state.pendingcb--;
-          cb(er);
-        });
-      else {
-        state.pendingcb--;
-        cb(er);
-      }
-      stream._writableState.errorEmitted = true;
-      stream.emit('error', er);
-    }
-    function onwriteStateUpdate(state) {
-      state.writing = false;
-      state.writecb = null;
-      state.length -= state.writelen;
-      state.writelen = 0;
-    }
-    function onwrite(stream, er) {
-      var state = stream._writableState;
-      var sync = state.sync;
-      var cb = state.writecb;
-      onwriteStateUpdate(state);
-      if (er)
-        onwriteError(stream, state, sync, er, cb);
-      else {
-        var finished = needFinish(stream, state);
-        if (!finished && !state.corked && !state.bufferProcessing && state.buffer.length) {
-          clearBuffer(stream, state);
-        }
-        if (sync) {
-          process.nextTick(function() {
-            afterWrite(stream, state, finished, cb);
-          });
-        } else {
-          afterWrite(stream, state, finished, cb);
-        }
-      }
-    }
-    function afterWrite(stream, state, finished, cb) {
-      if (!finished)
-        onwriteDrain(stream, state);
-      state.pendingcb--;
-      cb();
-      finishMaybe(stream, state);
-    }
-    function onwriteDrain(stream, state) {
-      if (state.length === 0 && state.needDrain) {
-        state.needDrain = false;
-        stream.emit('drain');
-      }
-    }
-    function clearBuffer(stream, state) {
-      state.bufferProcessing = true;
-      if (stream._writev && state.buffer.length > 1) {
-        var cbs = [];
-        for (var c = 0; c < state.buffer.length; c++)
-          cbs.push(state.buffer[c].callback);
-        state.pendingcb++;
-        doWrite(stream, state, true, state.length, state.buffer, '', function(err) {
-          for (var i = 0; i < cbs.length; i++) {
-            state.pendingcb--;
-            cbs[i](err);
-          }
-        });
-        state.buffer = [];
-      } else {
-        for (var c = 0; c < state.buffer.length; c++) {
-          var entry = state.buffer[c];
-          var chunk = entry.chunk;
-          var encoding = entry.encoding;
-          var cb = entry.callback;
-          var len = state.objectMode ? 1 : chunk.length;
-          doWrite(stream, state, false, len, chunk, encoding, cb);
-          if (state.writing) {
-            c++;
-            break;
-          }
-        }
-        if (c < state.buffer.length)
-          state.buffer = state.buffer.slice(c);
-        else
-          state.buffer.length = 0;
-      }
-      state.bufferProcessing = false;
-    }
-    Writable.prototype._write = function(chunk, encoding, cb) {
-      cb(new Error('not implemented'));
-    };
-    Writable.prototype._writev = null;
-    Writable.prototype.end = function(chunk, encoding, cb) {
-      var state = this._writableState;
-      if (util.isFunction(chunk)) {
-        cb = chunk;
-        chunk = null;
-        encoding = null;
-      } else if (util.isFunction(encoding)) {
-        cb = encoding;
-        encoding = null;
-      }
-      if (!util.isNullOrUndefined(chunk))
-        this.write(chunk, encoding);
-      if (state.corked) {
-        state.corked = 1;
-        this.uncork();
-      }
-      if (!state.ending && !state.finished)
-        endWritable(this, state, cb);
-    };
-    function needFinish(stream, state) {
-      return (state.ending && state.length === 0 && !state.finished && !state.writing);
-    }
-    function prefinish(stream, state) {
-      if (!state.prefinished) {
-        state.prefinished = true;
-        stream.emit('prefinish');
-      }
-    }
-    function finishMaybe(stream, state) {
-      var need = needFinish(stream, state);
-      if (need) {
-        if (state.pendingcb === 0) {
-          prefinish(stream, state);
-          state.finished = true;
-          stream.emit('finish');
-        } else
-          prefinish(stream, state);
-      }
-      return need;
-    }
-    function endWritable(stream, state, cb) {
-      state.ending = true;
-      finishMaybe(stream, state);
-      if (cb) {
-        if (state.finished)
-          process.nextTick(cb);
-        else
-          stream.once('finish', cb);
-      }
-      state.ended = true;
-    }
-  })(require("72").Buffer, require("3f"));
-  global.define = __define;
-  return module.exports;
-});
-
-$__System.registerDynamic("7d", ["7a", "76", "7e", "7b", "3f"], true, function(require, exports, module) {
-  ;
-  var global = this,
-      __define = global.define;
-  global.define = undefined;
-  (function(process) {
-    module.exports = Duplex;
-    var objectKeys = Object.keys || function(obj) {
-      var keys = [];
-      for (var key in obj)
-        keys.push(key);
-      return keys;
-    };
-    var util = require("7a");
-    util.inherits = require("76");
-    var Readable = require("7e");
-    var Writable = require("7b");
-    util.inherits(Duplex, Readable);
-    forEach(objectKeys(Writable.prototype), function(method) {
-      if (!Duplex.prototype[method])
-        Duplex.prototype[method] = Writable.prototype[method];
-    });
-    function Duplex(options) {
-      if (!(this instanceof Duplex))
-        return new Duplex(options);
-      Readable.call(this, options);
-      Writable.call(this, options);
-      if (options && options.readable === false)
-        this.readable = false;
-      if (options && options.writable === false)
-        this.writable = false;
-      this.allowHalfOpen = true;
-      if (options && options.allowHalfOpen === false)
-        this.allowHalfOpen = false;
-      this.once('end', onend);
-    }
-    function onend() {
-      if (this.allowHalfOpen || this._writableState.ended)
-        return;
-      process.nextTick(this.end.bind(this));
-    }
-    function forEach(xs, f) {
-      for (var i = 0,
-          l = xs.length; i < l; i++) {
-        f(xs[i], i);
-      }
-    }
-  })(require("3f"));
-  global.define = __define;
-  return module.exports;
-});
-
-$__System.registerDynamic("7f", ["72"], true, function(require, exports, module) {
+$__System.registerDynamic("7b", ["72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -10654,17 +10310,17 @@ $__System.registerDynamic("7f", ["72"], true, function(require, exports, module)
   return module.exports;
 });
 
-$__System.registerDynamic("80", ["7f"], true, function(require, exports, module) {
+$__System.registerDynamic("7c", ["7b"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("7f");
+  module.exports = require("7b");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("7e", ["78", "72", "57", "7c", "7a", "76", "@empty", "7d", "80", "3f"], true, function(require, exports, module) {
+$__System.registerDynamic("7d", ["78", "72", "57", "7e", "7a", "76", "7c", "3f"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -10679,39 +10335,30 @@ $__System.registerDynamic("7e", ["78", "72", "57", "7c", "7a", "76", "@empty", "
       EE.listenerCount = function(emitter, type) {
         return emitter.listeners(type).length;
       };
-    var Stream = require("7c");
+    var Stream = require("7e");
     var util = require("7a");
     util.inherits = require("76");
     var StringDecoder;
-    var debug = require("@empty");
-    if (debug && debug.debuglog) {
-      debug = debug.debuglog('stream');
-    } else {
-      debug = function() {};
-    }
     util.inherits(Readable, Stream);
     function ReadableState(options, stream) {
-      var Duplex = require("7d");
       options = options || {};
       var hwm = options.highWaterMark;
-      var defaultHwm = options.objectMode ? 16 : 16 * 1024;
-      this.highWaterMark = (hwm || hwm === 0) ? hwm : defaultHwm;
+      this.highWaterMark = (hwm || hwm === 0) ? hwm : 16 * 1024;
       this.highWaterMark = ~~this.highWaterMark;
       this.buffer = [];
       this.length = 0;
       this.pipes = null;
       this.pipesCount = 0;
-      this.flowing = null;
+      this.flowing = false;
       this.ended = false;
       this.endEmitted = false;
       this.reading = false;
+      this.calledRead = false;
       this.sync = true;
       this.needReadable = false;
       this.emittedReadable = false;
       this.readableListening = false;
       this.objectMode = !!options.objectMode;
-      if (stream instanceof Duplex)
-        this.objectMode = this.objectMode || !!options.readableObjectMode;
       this.defaultEncoding = options.defaultEncoding || 'utf8';
       this.ranOut = false;
       this.awaitDrain = 0;
@@ -10720,13 +10367,12 @@ $__System.registerDynamic("7e", ["78", "72", "57", "7c", "7a", "76", "@empty", "
       this.encoding = null;
       if (options.encoding) {
         if (!StringDecoder)
-          StringDecoder = require("80").StringDecoder;
+          StringDecoder = require("7c").StringDecoder;
         this.decoder = new StringDecoder(options.encoding);
         this.encoding = options.encoding;
       }
     }
     function Readable(options) {
-      var Duplex = require("7d");
       if (!(this instanceof Readable))
         return new Readable(options);
       this._readableState = new ReadableState(options, this);
@@ -10735,7 +10381,7 @@ $__System.registerDynamic("7e", ["78", "72", "57", "7c", "7a", "76", "@empty", "
     }
     Readable.prototype.push = function(chunk, encoding) {
       var state = this._readableState;
-      if (util.isString(chunk) && !state.objectMode) {
+      if (typeof chunk === 'string' && !state.objectMode) {
         encoding = encoding || state.defaultEncoding;
         if (encoding !== state.encoding) {
           chunk = new Buffer(chunk, encoding);
@@ -10752,7 +10398,7 @@ $__System.registerDynamic("7e", ["78", "72", "57", "7c", "7a", "76", "@empty", "
       var er = chunkInvalid(state, chunk);
       if (er) {
         stream.emit('error', er);
-      } else if (util.isNullOrUndefined(chunk)) {
+      } else if (chunk === null || chunk === undefined) {
         state.reading = false;
         if (!state.ended)
           onEofChunk(stream, state);
@@ -10766,20 +10412,15 @@ $__System.registerDynamic("7e", ["78", "72", "57", "7c", "7a", "76", "@empty", "
         } else {
           if (state.decoder && !addToFront && !encoding)
             chunk = state.decoder.write(chunk);
-          if (!addToFront)
-            state.reading = false;
-          if (state.flowing && state.length === 0 && !state.sync) {
-            stream.emit('data', chunk);
-            stream.read(0);
+          state.length += state.objectMode ? 1 : chunk.length;
+          if (addToFront) {
+            state.buffer.unshift(chunk);
           } else {
-            state.length += state.objectMode ? 1 : chunk.length;
-            if (addToFront)
-              state.buffer.unshift(chunk);
-            else
-              state.buffer.push(chunk);
-            if (state.needReadable)
-              emitReadable(stream);
+            state.reading = false;
+            state.buffer.push(chunk);
           }
+          if (state.needReadable)
+            emitReadable(stream);
           maybeReadMore(stream, state);
         }
       } else if (!addToFront) {
@@ -10792,10 +10433,9 @@ $__System.registerDynamic("7e", ["78", "72", "57", "7c", "7a", "76", "@empty", "
     }
     Readable.prototype.setEncoding = function(enc) {
       if (!StringDecoder)
-        StringDecoder = require("80").StringDecoder;
+        StringDecoder = require("7c").StringDecoder;
       this._readableState.decoder = new StringDecoder(enc);
       this._readableState.encoding = enc;
-      return this;
     };
     var MAX_HWM = 0x800000;
     function roundUpToNextPowerOf2(n) {
@@ -10814,7 +10454,7 @@ $__System.registerDynamic("7e", ["78", "72", "57", "7c", "7a", "76", "@empty", "
         return 0;
       if (state.objectMode)
         return n === 0 ? 0 : 1;
-      if (isNaN(n) || util.isNull(n)) {
+      if (n === null || isNaN(n)) {
         if (state.flowing && state.buffer.length)
           return state.buffer[0].length;
         else
@@ -10834,37 +10474,33 @@ $__System.registerDynamic("7e", ["78", "72", "57", "7c", "7a", "76", "@empty", "
       return n;
     }
     Readable.prototype.read = function(n) {
-      debug('read', n);
       var state = this._readableState;
+      state.calledRead = true;
       var nOrig = n;
-      if (!util.isNumber(n) || n > 0)
+      var ret;
+      if (typeof n !== 'number' || n > 0)
         state.emittedReadable = false;
       if (n === 0 && state.needReadable && (state.length >= state.highWaterMark || state.ended)) {
-        debug('read: emitReadable', state.length, state.ended);
-        if (state.length === 0 && state.ended)
-          endReadable(this);
-        else
-          emitReadable(this);
+        emitReadable(this);
         return null;
       }
       n = howMuchToRead(n, state);
       if (n === 0 && state.ended) {
+        ret = null;
+        if (state.length > 0 && state.decoder) {
+          ret = fromList(n, state);
+          state.length -= ret.length;
+        }
         if (state.length === 0)
           endReadable(this);
-        return null;
+        return ret;
       }
       var doRead = state.needReadable;
-      debug('need readable', doRead);
-      if (state.length === 0 || state.length - n < state.highWaterMark) {
+      if (state.length - n <= state.highWaterMark)
         doRead = true;
-        debug('length less than watermark', doRead);
-      }
-      if (state.ended || state.reading) {
+      if (state.ended || state.reading)
         doRead = false;
-        debug('reading or ended', doRead);
-      }
       if (doRead) {
-        debug('do read');
         state.reading = true;
         state.sync = true;
         if (state.length === 0)
@@ -10874,27 +10510,24 @@ $__System.registerDynamic("7e", ["78", "72", "57", "7c", "7a", "76", "@empty", "
       }
       if (doRead && !state.reading)
         n = howMuchToRead(nOrig, state);
-      var ret;
       if (n > 0)
         ret = fromList(n, state);
       else
         ret = null;
-      if (util.isNull(ret)) {
+      if (ret === null) {
         state.needReadable = true;
         n = 0;
       }
       state.length -= n;
       if (state.length === 0 && !state.ended)
         state.needReadable = true;
-      if (nOrig !== n && state.ended && state.length === 0)
+      if (state.ended && !state.endEmitted && state.length === 0)
         endReadable(this);
-      if (!util.isNull(ret))
-        this.emit('data', ret);
       return ret;
     };
     function chunkInvalid(state, chunk) {
       var er = null;
-      if (!util.isBuffer(chunk) && !util.isString(chunk) && !util.isNullOrUndefined(chunk) && !state.objectMode) {
+      if (!Buffer.isBuffer(chunk) && 'string' !== typeof chunk && chunk !== null && chunk !== undefined && !state.objectMode) {
         er = new TypeError('Invalid non-string/buffer chunk');
       }
       return er;
@@ -10908,26 +10541,26 @@ $__System.registerDynamic("7e", ["78", "72", "57", "7c", "7a", "76", "@empty", "
         }
       }
       state.ended = true;
-      emitReadable(stream);
+      if (state.length > 0)
+        emitReadable(stream);
+      else
+        endReadable(stream);
     }
     function emitReadable(stream) {
       var state = stream._readableState;
       state.needReadable = false;
-      if (!state.emittedReadable) {
-        debug('emitReadable', state.flowing);
-        state.emittedReadable = true;
-        if (state.sync)
-          process.nextTick(function() {
-            emitReadable_(stream);
-          });
-        else
+      if (state.emittedReadable)
+        return;
+      state.emittedReadable = true;
+      if (state.sync)
+        process.nextTick(function() {
           emitReadable_(stream);
-      }
+        });
+      else
+        emitReadable_(stream);
     }
     function emitReadable_(stream) {
-      debug('emit readable');
       stream.emit('readable');
-      flow(stream);
     }
     function maybeReadMore(stream, state) {
       if (!state.readingMore) {
@@ -10940,7 +10573,6 @@ $__System.registerDynamic("7e", ["78", "72", "57", "7c", "7a", "76", "@empty", "
     function maybeReadMore_(stream, state) {
       var len = state.length;
       while (!state.reading && !state.flowing && !state.ended && state.length < state.highWaterMark) {
-        debug('maybeReadMore read 0');
         stream.read(0);
         if (len === state.length)
           break;
@@ -10967,7 +10599,6 @@ $__System.registerDynamic("7e", ["78", "72", "57", "7c", "7a", "76", "@empty", "
           break;
       }
       state.pipesCount += 1;
-      debug('pipe count=%d opts=%j', state.pipesCount, pipeOpts);
       var doEnd = (!pipeOpts || pipeOpts.end !== false) && dest !== process.stdout && dest !== process.stderr;
       var endFn = doEnd ? onend : cleanup;
       if (state.endEmitted)
@@ -10976,19 +10607,16 @@ $__System.registerDynamic("7e", ["78", "72", "57", "7c", "7a", "76", "@empty", "
         src.once('end', endFn);
       dest.on('unpipe', onunpipe);
       function onunpipe(readable) {
-        debug('onunpipe');
-        if (readable === src) {
-          cleanup();
-        }
+        if (readable !== src)
+          return;
+        cleanup();
       }
       function onend() {
-        debug('onend');
         dest.end();
       }
       var ondrain = pipeOnDrain(src);
       dest.on('drain', ondrain);
       function cleanup() {
-        debug('cleanup');
         dest.removeListener('close', onclose);
         dest.removeListener('finish', onfinish);
         dest.removeListener('drain', ondrain);
@@ -10996,22 +10624,10 @@ $__System.registerDynamic("7e", ["78", "72", "57", "7c", "7a", "76", "@empty", "
         dest.removeListener('unpipe', onunpipe);
         src.removeListener('end', onend);
         src.removeListener('end', cleanup);
-        src.removeListener('data', ondata);
-        if (state.awaitDrain && (!dest._writableState || dest._writableState.needDrain))
+        if (!dest._writableState || dest._writableState.needDrain)
           ondrain();
       }
-      src.on('data', ondata);
-      function ondata(chunk) {
-        debug('ondata');
-        var ret = dest.write(chunk);
-        if (false === ret) {
-          debug('false write response, pause', src._readableState.awaitDrain);
-          src._readableState.awaitDrain++;
-          src.pause();
-        }
-      }
       function onerror(er) {
-        debug('onerror', er);
         unpipe();
         dest.removeListener('error', onerror);
         if (EE.listenerCount(dest, 'error') === 0)
@@ -11029,33 +10645,64 @@ $__System.registerDynamic("7e", ["78", "72", "57", "7c", "7a", "76", "@empty", "
       }
       dest.once('close', onclose);
       function onfinish() {
-        debug('onfinish');
         dest.removeListener('close', onclose);
         unpipe();
       }
       dest.once('finish', onfinish);
       function unpipe() {
-        debug('unpipe');
         src.unpipe(dest);
       }
       dest.emit('pipe', src);
       if (!state.flowing) {
-        debug('pipe resume');
-        src.resume();
+        this.on('readable', pipeOnReadable);
+        state.flowing = true;
+        process.nextTick(function() {
+          flow(src);
+        });
       }
       return dest;
     };
     function pipeOnDrain(src) {
       return function() {
+        var dest = this;
         var state = src._readableState;
-        debug('pipeOnDrain', state.awaitDrain);
-        if (state.awaitDrain)
-          state.awaitDrain--;
-        if (state.awaitDrain === 0 && EE.listenerCount(src, 'data')) {
-          state.flowing = true;
+        state.awaitDrain--;
+        if (state.awaitDrain === 0)
           flow(src);
-        }
       };
+    }
+    function flow(src) {
+      var state = src._readableState;
+      var chunk;
+      state.awaitDrain = 0;
+      function write(dest, i, list) {
+        var written = dest.write(chunk);
+        if (false === written) {
+          state.awaitDrain++;
+        }
+      }
+      while (state.pipesCount && null !== (chunk = src.read())) {
+        if (state.pipesCount === 1)
+          write(state.pipes, 0, null);
+        else
+          forEach(state.pipes, write);
+        src.emit('data', chunk);
+        if (state.awaitDrain > 0)
+          return;
+      }
+      if (state.pipesCount === 0) {
+        state.flowing = false;
+        if (EE.listenerCount(src, 'data') > 0)
+          emitDataEvents(src);
+        return;
+      }
+      state.ranOut = true;
+    }
+    function pipeOnReadable() {
+      if (this._readableState.ranOut) {
+        this._readableState.ranOut = false;
+        flow(this);
+      }
     }
     Readable.prototype.unpipe = function(dest) {
       var state = this._readableState;
@@ -11068,6 +10715,7 @@ $__System.registerDynamic("7e", ["78", "72", "57", "7c", "7a", "76", "@empty", "
           dest = state.pipes;
         state.pipes = null;
         state.pipesCount = 0;
+        this.removeListener('readable', pipeOnReadable);
         state.flowing = false;
         if (dest)
           dest.emit('unpipe', this);
@@ -11078,6 +10726,7 @@ $__System.registerDynamic("7e", ["78", "72", "57", "7c", "7a", "76", "@empty", "
         var len = state.pipesCount;
         state.pipes = null;
         state.pipesCount = 0;
+        this.removeListener('readable', pipeOnReadable);
         state.flowing = false;
         for (var i = 0; i < len; i++)
           dests[i].emit('unpipe', this);
@@ -11095,9 +10744,8 @@ $__System.registerDynamic("7e", ["78", "72", "57", "7c", "7a", "76", "@empty", "
     };
     Readable.prototype.on = function(ev, fn) {
       var res = Stream.prototype.on.call(this, ev, fn);
-      if (ev === 'data' && false !== this._readableState.flowing) {
-        this.resume();
-      }
+      if (ev === 'data' && !this._readableState.flowing)
+        emitDataEvents(this);
       if (ev === 'readable' && this.readable) {
         var state = this._readableState;
         if (!state.readableListening) {
@@ -11105,11 +10753,7 @@ $__System.registerDynamic("7e", ["78", "72", "57", "7c", "7a", "76", "@empty", "
           state.emittedReadable = false;
           state.needReadable = true;
           if (!state.reading) {
-            var self = this;
-            process.nextTick(function() {
-              debug('readable nexttick read 0');
-              self.read(0);
-            });
+            this.read(0);
           } else if (state.length) {
             emitReadable(this, state);
           }
@@ -11119,57 +10763,55 @@ $__System.registerDynamic("7e", ["78", "72", "57", "7c", "7a", "76", "@empty", "
     };
     Readable.prototype.addListener = Readable.prototype.on;
     Readable.prototype.resume = function() {
-      var state = this._readableState;
-      if (!state.flowing) {
-        debug('resume');
-        state.flowing = true;
-        if (!state.reading) {
-          debug('resume read 0');
-          this.read(0);
-        }
-        resume(this, state);
-      }
-      return this;
+      emitDataEvents(this);
+      this.read(0);
+      this.emit('resume');
     };
-    function resume(stream, state) {
-      if (!state.resumeScheduled) {
-        state.resumeScheduled = true;
-        process.nextTick(function() {
-          resume_(stream, state);
-        });
-      }
-    }
-    function resume_(stream, state) {
-      state.resumeScheduled = false;
-      stream.emit('resume');
-      flow(stream);
-      if (state.flowing && !state.reading)
-        stream.read(0);
-    }
     Readable.prototype.pause = function() {
-      debug('call pause flowing=%j', this._readableState.flowing);
-      if (false !== this._readableState.flowing) {
-        debug('pause');
-        this._readableState.flowing = false;
-        this.emit('pause');
-      }
-      return this;
+      emitDataEvents(this, true);
+      this.emit('pause');
     };
-    function flow(stream) {
+    function emitDataEvents(stream, startPaused) {
       var state = stream._readableState;
-      debug('flow', state.flowing);
       if (state.flowing) {
-        do {
-          var chunk = stream.read();
-        } while (null !== chunk && state.flowing);
+        throw new Error('Cannot switch to old mode now.');
       }
+      var paused = startPaused || false;
+      var readable = false;
+      stream.readable = true;
+      stream.pipe = Stream.prototype.pipe;
+      stream.on = stream.addListener = Stream.prototype.on;
+      stream.on('readable', function() {
+        readable = true;
+        var c;
+        while (!paused && (null !== (c = stream.read())))
+          stream.emit('data', c);
+        if (c === null) {
+          readable = false;
+          stream._readableState.needReadable = true;
+        }
+      });
+      stream.pause = function() {
+        paused = true;
+        this.emit('pause');
+      };
+      stream.resume = function() {
+        paused = false;
+        if (readable)
+          process.nextTick(function() {
+            stream.emit('readable');
+          });
+        else
+          this.read(0);
+        this.emit('resume');
+      };
+      stream.emit('readable');
     }
     Readable.prototype.wrap = function(stream) {
       var state = this._readableState;
       var paused = false;
       var self = this;
       stream.on('end', function() {
-        debug('wrapped end');
         if (state.decoder && !state.ended) {
           var chunk = state.decoder.end();
           if (chunk && chunk.length)
@@ -11178,10 +10820,11 @@ $__System.registerDynamic("7e", ["78", "72", "57", "7c", "7a", "76", "@empty", "
         self.push(null);
       });
       stream.on('data', function(chunk) {
-        debug('wrapped data');
         if (state.decoder)
           chunk = state.decoder.write(chunk);
-        if (!chunk || !state.objectMode && !chunk.length)
+        if (state.objectMode && (chunk === null || chunk === undefined))
+          return;
+        else if (!state.objectMode && (!chunk || !chunk.length))
           return;
         var ret = self.push(chunk);
         if (!ret) {
@@ -11190,7 +10833,7 @@ $__System.registerDynamic("7e", ["78", "72", "57", "7c", "7a", "76", "@empty", "
         }
       });
       for (var i in stream) {
-        if (util.isFunction(stream[i]) && util.isUndefined(this[i])) {
+        if (typeof stream[i] === 'function' && typeof this[i] === 'undefined') {
           this[i] = function(method) {
             return function() {
               return stream[method].apply(stream, arguments);
@@ -11203,7 +10846,6 @@ $__System.registerDynamic("7e", ["78", "72", "57", "7c", "7a", "76", "@empty", "
         stream.on(ev, self.emit.bind(self, ev));
       });
       self._read = function(n) {
-        debug('wrapped _read', n);
         if (paused) {
           paused = false;
           stream.resume();
@@ -11265,7 +10907,7 @@ $__System.registerDynamic("7e", ["78", "72", "57", "7c", "7a", "76", "@empty", "
       var state = stream._readableState;
       if (state.length > 0)
         throw new Error('endReadable called on non-empty stream');
-      if (!state.endEmitted) {
+      if (!state.endEmitted && state.calledRead) {
         state.ended = true;
         process.nextTick(function() {
           if (!state.endEmitted && state.length === 0) {
@@ -11295,14 +10937,301 @@ $__System.registerDynamic("7e", ["78", "72", "57", "7c", "7a", "76", "@empty", "
   return module.exports;
 });
 
-$__System.registerDynamic("81", ["7d", "7a", "76", "3f"], true, function(require, exports, module) {
+$__System.registerDynamic("7f", ["7a", "76", "7d", "80", "3f"], true, function(require, exports, module) {
+  ;
+  var global = this,
+      __define = global.define;
+  global.define = undefined;
+  (function(process) {
+    module.exports = Duplex;
+    var objectKeys = Object.keys || function(obj) {
+      var keys = [];
+      for (var key in obj)
+        keys.push(key);
+      return keys;
+    };
+    var util = require("7a");
+    util.inherits = require("76");
+    var Readable = require("7d");
+    var Writable = require("80");
+    util.inherits(Duplex, Readable);
+    forEach(objectKeys(Writable.prototype), function(method) {
+      if (!Duplex.prototype[method])
+        Duplex.prototype[method] = Writable.prototype[method];
+    });
+    function Duplex(options) {
+      if (!(this instanceof Duplex))
+        return new Duplex(options);
+      Readable.call(this, options);
+      Writable.call(this, options);
+      if (options && options.readable === false)
+        this.readable = false;
+      if (options && options.writable === false)
+        this.writable = false;
+      this.allowHalfOpen = true;
+      if (options && options.allowHalfOpen === false)
+        this.allowHalfOpen = false;
+      this.once('end', onend);
+    }
+    function onend() {
+      if (this.allowHalfOpen || this._writableState.ended)
+        return;
+      process.nextTick(this.end.bind(this));
+    }
+    function forEach(xs, f) {
+      for (var i = 0,
+          l = xs.length; i < l; i++) {
+        f(xs[i], i);
+      }
+    }
+  })(require("3f"));
+  global.define = __define;
+  return module.exports;
+});
+
+$__System.registerDynamic("80", ["72", "7a", "76", "7e", "7f", "3f"], true, function(require, exports, module) {
+  ;
+  var global = this,
+      __define = global.define;
+  global.define = undefined;
+  (function(Buffer, process) {
+    module.exports = Writable;
+    var Buffer = require("72").Buffer;
+    Writable.WritableState = WritableState;
+    var util = require("7a");
+    util.inherits = require("76");
+    var Stream = require("7e");
+    util.inherits(Writable, Stream);
+    function WriteReq(chunk, encoding, cb) {
+      this.chunk = chunk;
+      this.encoding = encoding;
+      this.callback = cb;
+    }
+    function WritableState(options, stream) {
+      options = options || {};
+      var hwm = options.highWaterMark;
+      this.highWaterMark = (hwm || hwm === 0) ? hwm : 16 * 1024;
+      this.objectMode = !!options.objectMode;
+      this.highWaterMark = ~~this.highWaterMark;
+      this.needDrain = false;
+      this.ending = false;
+      this.ended = false;
+      this.finished = false;
+      var noDecode = options.decodeStrings === false;
+      this.decodeStrings = !noDecode;
+      this.defaultEncoding = options.defaultEncoding || 'utf8';
+      this.length = 0;
+      this.writing = false;
+      this.sync = true;
+      this.bufferProcessing = false;
+      this.onwrite = function(er) {
+        onwrite(stream, er);
+      };
+      this.writecb = null;
+      this.writelen = 0;
+      this.buffer = [];
+      this.errorEmitted = false;
+    }
+    function Writable(options) {
+      var Duplex = require("7f");
+      if (!(this instanceof Writable) && !(this instanceof Duplex))
+        return new Writable(options);
+      this._writableState = new WritableState(options, this);
+      this.writable = true;
+      Stream.call(this);
+    }
+    Writable.prototype.pipe = function() {
+      this.emit('error', new Error('Cannot pipe. Not readable.'));
+    };
+    function writeAfterEnd(stream, state, cb) {
+      var er = new Error('write after end');
+      stream.emit('error', er);
+      process.nextTick(function() {
+        cb(er);
+      });
+    }
+    function validChunk(stream, state, chunk, cb) {
+      var valid = true;
+      if (!Buffer.isBuffer(chunk) && 'string' !== typeof chunk && chunk !== null && chunk !== undefined && !state.objectMode) {
+        var er = new TypeError('Invalid non-string/buffer chunk');
+        stream.emit('error', er);
+        process.nextTick(function() {
+          cb(er);
+        });
+        valid = false;
+      }
+      return valid;
+    }
+    Writable.prototype.write = function(chunk, encoding, cb) {
+      var state = this._writableState;
+      var ret = false;
+      if (typeof encoding === 'function') {
+        cb = encoding;
+        encoding = null;
+      }
+      if (Buffer.isBuffer(chunk))
+        encoding = 'buffer';
+      else if (!encoding)
+        encoding = state.defaultEncoding;
+      if (typeof cb !== 'function')
+        cb = function() {};
+      if (state.ended)
+        writeAfterEnd(this, state, cb);
+      else if (validChunk(this, state, chunk, cb))
+        ret = writeOrBuffer(this, state, chunk, encoding, cb);
+      return ret;
+    };
+    function decodeChunk(state, chunk, encoding) {
+      if (!state.objectMode && state.decodeStrings !== false && typeof chunk === 'string') {
+        chunk = new Buffer(chunk, encoding);
+      }
+      return chunk;
+    }
+    function writeOrBuffer(stream, state, chunk, encoding, cb) {
+      chunk = decodeChunk(state, chunk, encoding);
+      if (Buffer.isBuffer(chunk))
+        encoding = 'buffer';
+      var len = state.objectMode ? 1 : chunk.length;
+      state.length += len;
+      var ret = state.length < state.highWaterMark;
+      if (!ret)
+        state.needDrain = true;
+      if (state.writing)
+        state.buffer.push(new WriteReq(chunk, encoding, cb));
+      else
+        doWrite(stream, state, len, chunk, encoding, cb);
+      return ret;
+    }
+    function doWrite(stream, state, len, chunk, encoding, cb) {
+      state.writelen = len;
+      state.writecb = cb;
+      state.writing = true;
+      state.sync = true;
+      stream._write(chunk, encoding, state.onwrite);
+      state.sync = false;
+    }
+    function onwriteError(stream, state, sync, er, cb) {
+      if (sync)
+        process.nextTick(function() {
+          cb(er);
+        });
+      else
+        cb(er);
+      stream._writableState.errorEmitted = true;
+      stream.emit('error', er);
+    }
+    function onwriteStateUpdate(state) {
+      state.writing = false;
+      state.writecb = null;
+      state.length -= state.writelen;
+      state.writelen = 0;
+    }
+    function onwrite(stream, er) {
+      var state = stream._writableState;
+      var sync = state.sync;
+      var cb = state.writecb;
+      onwriteStateUpdate(state);
+      if (er)
+        onwriteError(stream, state, sync, er, cb);
+      else {
+        var finished = needFinish(stream, state);
+        if (!finished && !state.bufferProcessing && state.buffer.length)
+          clearBuffer(stream, state);
+        if (sync) {
+          process.nextTick(function() {
+            afterWrite(stream, state, finished, cb);
+          });
+        } else {
+          afterWrite(stream, state, finished, cb);
+        }
+      }
+    }
+    function afterWrite(stream, state, finished, cb) {
+      if (!finished)
+        onwriteDrain(stream, state);
+      cb();
+      if (finished)
+        finishMaybe(stream, state);
+    }
+    function onwriteDrain(stream, state) {
+      if (state.length === 0 && state.needDrain) {
+        state.needDrain = false;
+        stream.emit('drain');
+      }
+    }
+    function clearBuffer(stream, state) {
+      state.bufferProcessing = true;
+      for (var c = 0; c < state.buffer.length; c++) {
+        var entry = state.buffer[c];
+        var chunk = entry.chunk;
+        var encoding = entry.encoding;
+        var cb = entry.callback;
+        var len = state.objectMode ? 1 : chunk.length;
+        doWrite(stream, state, len, chunk, encoding, cb);
+        if (state.writing) {
+          c++;
+          break;
+        }
+      }
+      state.bufferProcessing = false;
+      if (c < state.buffer.length)
+        state.buffer = state.buffer.slice(c);
+      else
+        state.buffer.length = 0;
+    }
+    Writable.prototype._write = function(chunk, encoding, cb) {
+      cb(new Error('not implemented'));
+    };
+    Writable.prototype.end = function(chunk, encoding, cb) {
+      var state = this._writableState;
+      if (typeof chunk === 'function') {
+        cb = chunk;
+        chunk = null;
+        encoding = null;
+      } else if (typeof encoding === 'function') {
+        cb = encoding;
+        encoding = null;
+      }
+      if (typeof chunk !== 'undefined' && chunk !== null)
+        this.write(chunk, encoding);
+      if (!state.ending && !state.finished)
+        endWritable(this, state, cb);
+    };
+    function needFinish(stream, state) {
+      return (state.ending && state.length === 0 && !state.finished && !state.writing);
+    }
+    function finishMaybe(stream, state) {
+      var need = needFinish(stream, state);
+      if (need) {
+        state.finished = true;
+        stream.emit('finish');
+      }
+      return need;
+    }
+    function endWritable(stream, state, cb) {
+      state.ending = true;
+      finishMaybe(stream, state);
+      if (cb) {
+        if (state.finished)
+          process.nextTick(cb);
+        else
+          stream.once('finish', cb);
+      }
+      state.ended = true;
+    }
+  })(require("72").Buffer, require("3f"));
+  global.define = __define;
+  return module.exports;
+});
+
+$__System.registerDynamic("81", ["7f", "7a", "76", "3f"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   (function(process) {
     module.exports = Transform;
-    var Duplex = require("7d");
+    var Duplex = require("7f");
     var util = require("7a");
     util.inherits = require("76");
     util.inherits(Transform, Duplex);
@@ -11323,7 +11252,7 @@ $__System.registerDynamic("81", ["7d", "7a", "76", "3f"], true, function(require
         return stream.emit('error', new Error('no writecb in Transform class'));
       ts.writechunk = null;
       ts.writecb = null;
-      if (!util.isNullOrUndefined(data))
+      if (data !== null && data !== undefined)
         stream.push(data);
       if (cb)
         cb(er);
@@ -11337,12 +11266,12 @@ $__System.registerDynamic("81", ["7d", "7a", "76", "3f"], true, function(require
       if (!(this instanceof Transform))
         return new Transform(options);
       Duplex.call(this, options);
-      this._transformState = new TransformState(options, this);
+      var ts = this._transformState = new TransformState(options, this);
       var stream = this;
       this._readableState.needReadable = true;
       this._readableState.sync = false;
-      this.once('prefinish', function() {
-        if (util.isFunction(this._flush))
+      this.once('finish', function() {
+        if ('function' === typeof this._flush)
           this._flush(function(er) {
             done(stream, er);
           });
@@ -11370,7 +11299,7 @@ $__System.registerDynamic("81", ["7d", "7a", "76", "3f"], true, function(require
     };
     Transform.prototype._read = function(n) {
       var ts = this._transformState;
-      if (!util.isNull(ts.writechunk) && ts.writecb && !ts.transforming) {
+      if (ts.writechunk !== null && ts.writecb && !ts.transforming) {
         ts.transforming = true;
         this._transform(ts.writechunk, ts.writeencoding, ts.afterTransform);
       } else {
@@ -11381,6 +11310,7 @@ $__System.registerDynamic("81", ["7d", "7a", "76", "3f"], true, function(require
       if (er)
         return stream.emit('error', er);
       var ws = stream._writableState;
+      var rs = stream._readableState;
       var ts = stream._transformState;
       if (ws.length)
         throw new Error('calling transform done when ws.length != 0');
@@ -11415,38 +11345,39 @@ $__System.registerDynamic("82", ["81", "7a", "76"], true, function(require, expo
   return module.exports;
 });
 
-$__System.registerDynamic("83", ["7e", "7c", "7b", "7d", "81", "82"], true, function(require, exports, module) {
+$__System.registerDynamic("83", ["7e", "7d", "80", "7f", "81", "82"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  exports = module.exports = require("7e");
-  exports.Stream = require("7c");
+  var Stream = require("7e");
+  exports = module.exports = require("7d");
+  exports.Stream = Stream;
   exports.Readable = exports;
-  exports.Writable = require("7b");
-  exports.Duplex = require("7d");
+  exports.Writable = require("80");
+  exports.Duplex = require("7f");
   exports.Transform = require("81");
   exports.PassThrough = require("82");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("84", ["7b"], true, function(require, exports, module) {
+$__System.registerDynamic("84", ["80"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("7b");
+  module.exports = require("80");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("85", ["7d"], true, function(require, exports, module) {
+$__System.registerDynamic("85", ["7f"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("7d");
+  module.exports = require("7f");
   global.define = __define;
   return module.exports;
 });
@@ -11471,7 +11402,7 @@ $__System.registerDynamic("87", ["82"], true, function(require, exports, module)
   return module.exports;
 });
 
-$__System.registerDynamic("7c", ["57", "76", "83", "84", "85", "86", "87"], true, function(require, exports, module) {
+$__System.registerDynamic("7e", ["57", "76", "83", "84", "85", "86", "87"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -11552,12 +11483,12 @@ $__System.registerDynamic("7c", ["57", "76", "83", "84", "85", "86", "87"], true
   return module.exports;
 });
 
-$__System.registerDynamic("88", ["7c"], true, function(require, exports, module) {
+$__System.registerDynamic("88", ["7e"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("7c");
+  module.exports = require("7e");
   global.define = __define;
   return module.exports;
 });
@@ -20683,80 +20614,12 @@ $__System.registerDynamic("d9", ["d8"], true, function(require, exports, module)
   return module.exports;
 });
 
-$__System.registerDynamic("da", ["76", "ce", "d0", "d9", "8a", "72"], true, function(require, exports, module) {
+$__System.registerDynamic("da", ["7c"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  (function(Buffer) {
-    'use strict';
-    var inherits = require("76");
-    var md5 = require("ce");
-    var rmd160 = require("d0");
-    var sha = require("d9");
-    var Transform = require("8a").Transform;
-    function HashNoConstructor(hash) {
-      Transform.call(this);
-      this._hash = hash;
-      this.buffers = [];
-    }
-    inherits(HashNoConstructor, Transform);
-    HashNoConstructor.prototype._transform = function(data, _, next) {
-      this.buffers.push(data);
-      next();
-    };
-    HashNoConstructor.prototype._flush = function(next) {
-      this.push(this.digest());
-      next();
-    };
-    HashNoConstructor.prototype.update = function(data, enc) {
-      if (typeof data === 'string') {
-        data = new Buffer(data, enc);
-      }
-      this.buffers.push(data);
-      return this;
-    };
-    HashNoConstructor.prototype.digest = function(enc) {
-      var buf = Buffer.concat(this.buffers);
-      var r = this._hash(buf);
-      this.buffers = null;
-      return enc ? r.toString(enc) : r;
-    };
-    function Hash(hash) {
-      Transform.call(this);
-      this._hash = hash;
-    }
-    inherits(Hash, Transform);
-    Hash.prototype._transform = function(data, enc, next) {
-      if (enc)
-        data = new Buffer(data, enc);
-      this._hash.update(data);
-      next();
-    };
-    Hash.prototype._flush = function(next) {
-      this.push(this._hash.digest());
-      this._hash = null;
-      next();
-    };
-    Hash.prototype.update = function(data, enc) {
-      if (typeof data === 'string') {
-        data = new Buffer(data, enc);
-      }
-      this._hash.update(data);
-      return this;
-    };
-    Hash.prototype.digest = function(enc) {
-      var outData = this._hash.digest();
-      return enc ? outData.toString(enc) : outData;
-    };
-    module.exports = function createHash(alg) {
-      if ('md5' === alg)
-        return new HashNoConstructor(md5);
-      if ('rmd160' === alg)
-        return new HashNoConstructor(rmd160);
-      return new Hash(sha(alg));
-    };
-  })(require("72").Buffer);
+  module.exports = $__System._nodeRequire ? $__System._nodeRequire('string_decoder') : require("7c");
   global.define = __define;
   return module.exports;
 });
@@ -20771,20 +20634,177 @@ $__System.registerDynamic("db", ["da"], true, function(require, exports, module)
   return module.exports;
 });
 
-$__System.registerDynamic("dc", ["da", "76", "8a", "72"], true, function(require, exports, module) {
+$__System.registerDynamic("dc", ["8a", "76", "db", "72"], true, function(require, exports, module) {
+  ;
+  var global = this,
+      __define = global.define;
+  global.define = undefined;
+  (function(Buffer) {
+    var Transform = require("8a").Transform;
+    var inherits = require("76");
+    var StringDecoder = require("db").StringDecoder;
+    module.exports = CipherBase;
+    inherits(CipherBase, Transform);
+    function CipherBase(hashMode) {
+      Transform.call(this);
+      this.hashMode = typeof hashMode === 'string';
+      if (this.hashMode) {
+        this[hashMode] = this._finalOrDigest;
+      } else {
+        this.final = this._finalOrDigest;
+      }
+      this._decoder = null;
+      this._encoding = null;
+    }
+    CipherBase.prototype.update = function(data, inputEnc, outputEnc) {
+      if (typeof data === 'string') {
+        data = new Buffer(data, inputEnc);
+      }
+      var outData = this._update(data);
+      if (this.hashMode) {
+        return this;
+      }
+      if (outputEnc) {
+        outData = this._toString(outData, outputEnc);
+      }
+      return outData;
+    };
+    CipherBase.prototype._transform = function(data, _, next) {
+      var err;
+      try {
+        if (this.hashMode) {
+          this._update(data);
+        } else {
+          this.push(this._update(data));
+        }
+      } catch (e) {
+        err = e;
+      } finally {
+        next(err);
+      }
+    };
+    CipherBase.prototype._flush = function(done) {
+      var err;
+      try {
+        this.push(this._final());
+      } catch (e) {
+        err = e;
+      } finally {
+        done(err);
+      }
+    };
+    CipherBase.prototype._finalOrDigest = function(outputEnc) {
+      var outData = this._final() || new Buffer('');
+      if (outputEnc) {
+        outData = this._toString(outData, outputEnc, true);
+      }
+      return outData;
+    };
+    CipherBase.prototype._toString = function(value, enc, final) {
+      if (!this._decoder) {
+        this._decoder = new StringDecoder(enc);
+        this._encoding = enc;
+      }
+      if (this._encoding !== enc) {
+        throw new Error('can\'t switch encodings');
+      }
+      var out = this._decoder.write(value);
+      if (final) {
+        out += this._decoder.end();
+      }
+      return out;
+    };
+  })(require("72").Buffer);
+  global.define = __define;
+  return module.exports;
+});
+
+$__System.registerDynamic("dd", ["dc"], true, function(require, exports, module) {
+  ;
+  var global = this,
+      __define = global.define;
+  global.define = undefined;
+  module.exports = require("dc");
+  global.define = __define;
+  return module.exports;
+});
+
+$__System.registerDynamic("de", ["76", "ce", "d0", "d9", "dd", "72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   (function(Buffer) {
     'use strict';
-    var createHash = require("da");
+    var inherits = require("76");
+    var md5 = require("ce");
+    var rmd160 = require("d0");
+    var sha = require("d9");
+    var Base = require("dd");
+    function HashNoConstructor(hash) {
+      Base.call(this, 'digest');
+      this._hash = hash;
+      this.buffers = [];
+    }
+    inherits(HashNoConstructor, Base);
+    HashNoConstructor.prototype._update = function(data) {
+      this.buffers.push(data);
+    };
+    HashNoConstructor.prototype._final = function() {
+      var buf = Buffer.concat(this.buffers);
+      var r = this._hash(buf);
+      this.buffers = null;
+      return r;
+    };
+    function Hash(hash) {
+      Base.call(this, 'digest');
+      this._hash = hash;
+    }
+    inherits(Hash, Base);
+    Hash.prototype._update = function(data) {
+      this._hash.update(data);
+    };
+    Hash.prototype._final = function() {
+      return this._hash.digest();
+    };
+    module.exports = function createHash(alg) {
+      alg = alg.toLowerCase();
+      if ('md5' === alg)
+        return new HashNoConstructor(md5);
+      if ('rmd160' === alg || 'ripemd160' === alg)
+        return new HashNoConstructor(rmd160);
+      return new Hash(sha(alg));
+    };
+  })(require("72").Buffer);
+  global.define = __define;
+  return module.exports;
+});
+
+$__System.registerDynamic("df", ["de"], true, function(require, exports, module) {
+  ;
+  var global = this,
+      __define = global.define;
+  global.define = undefined;
+  module.exports = require("de");
+  global.define = __define;
+  return module.exports;
+});
+
+$__System.registerDynamic("e0", ["de", "76", "8a", "72"], true, function(require, exports, module) {
+  ;
+  var global = this,
+      __define = global.define;
+  global.define = undefined;
+  (function(Buffer) {
+    'use strict';
+    var createHash = require("de");
     var inherits = require("76");
     var Transform = require("8a").Transform;
     var ZEROS = new Buffer(128);
     ZEROS.fill(0);
     function Hmac(alg, key) {
       Transform.call(this);
+      alg = alg.toLowerCase();
       if (typeof key === 'string') {
         key = new Buffer(key);
       }
@@ -20829,17 +20849,17 @@ $__System.registerDynamic("dc", ["da", "76", "8a", "72"], true, function(require
   return module.exports;
 });
 
-$__System.registerDynamic("dd", ["dc"], true, function(require, exports, module) {
+$__System.registerDynamic("e1", ["e0"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("dc");
+  module.exports = require("e0");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("de", ["72"], true, function(require, exports, module) {
+$__System.registerDynamic("e2", ["72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -20921,13 +20941,13 @@ $__System.registerDynamic("de", ["72"], true, function(require, exports, module)
   return module.exports;
 });
 
-$__System.registerDynamic("df", ["dd", "72"], true, function(require, exports, module) {
+$__System.registerDynamic("e3", ["e1", "72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   (function(Buffer) {
-    var createHmac = require("dd");
+    var createHmac = require("e1");
     var MAX_ALLOC = Math.pow(2, 30) - 1;
     exports.pbkdf2 = pbkdf2;
     function pbkdf2(password, salt, iterations, keylen, digest, callback) {
@@ -20996,17 +21016,106 @@ $__System.registerDynamic("df", ["dd", "72"], true, function(require, exports, m
   return module.exports;
 });
 
-$__System.registerDynamic("e0", ["df"], true, function(require, exports, module) {
+$__System.registerDynamic("e4", ["e3"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("df");
+  module.exports = require("e3");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("e1", ["72"], true, function(require, exports, module) {
+$__System.registerDynamic("e5", ["ce", "72"], true, function(require, exports, module) {
+  ;
+  var global = this,
+      __define = global.define;
+  global.define = undefined;
+  (function(Buffer) {
+    var md5 = require("ce");
+    module.exports = EVP_BytesToKey;
+    function EVP_BytesToKey(password, salt, keyLen, ivLen) {
+      if (!Buffer.isBuffer(password)) {
+        password = new Buffer(password, 'binary');
+      }
+      if (salt && !Buffer.isBuffer(salt)) {
+        salt = new Buffer(salt, 'binary');
+      }
+      keyLen = keyLen / 8;
+      ivLen = ivLen || 0;
+      var ki = 0;
+      var ii = 0;
+      var key = new Buffer(keyLen);
+      var iv = new Buffer(ivLen);
+      var addmd = 0;
+      var md_buf;
+      var i;
+      var bufs = [];
+      while (true) {
+        if (addmd++ > 0) {
+          bufs.push(md_buf);
+        }
+        bufs.push(password);
+        if (salt) {
+          bufs.push(salt);
+        }
+        md_buf = md5(Buffer.concat(bufs));
+        bufs = [];
+        i = 0;
+        if (keyLen > 0) {
+          while (true) {
+            if (keyLen === 0) {
+              break;
+            }
+            if (i === md_buf.length) {
+              break;
+            }
+            key[ki++] = md_buf[i];
+            keyLen--;
+            i++;
+          }
+        }
+        if (ivLen > 0 && i !== md_buf.length) {
+          while (true) {
+            if (ivLen === 0) {
+              break;
+            }
+            if (i === md_buf.length) {
+              break;
+            }
+            iv[ii++] = md_buf[i];
+            ivLen--;
+            i++;
+          }
+        }
+        if (keyLen === 0 && ivLen === 0) {
+          break;
+        }
+      }
+      for (i = 0; i < md_buf.length; i++) {
+        md_buf[i] = 0;
+      }
+      return {
+        key: key,
+        iv: iv
+      };
+    }
+  })(require("72").Buffer);
+  global.define = __define;
+  return module.exports;
+});
+
+$__System.registerDynamic("e6", ["e5"], true, function(require, exports, module) {
+  ;
+  var global = this,
+      __define = global.define;
+  global.define = undefined;
+  module.exports = require("e5");
+  global.define = __define;
+  return module.exports;
+});
+
+$__System.registerDynamic("e7", ["72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -21192,91 +21301,7 @@ $__System.registerDynamic("e1", ["72"], true, function(require, exports, module)
   return module.exports;
 });
 
-$__System.registerDynamic("e2", ["80"], true, function(require, exports, module) {
-  ;
-  var global = this,
-      __define = global.define;
-  global.define = undefined;
-  module.exports = $__System._nodeRequire ? $__System._nodeRequire('string_decoder') : require("80");
-  global.define = __define;
-  return module.exports;
-});
-
-$__System.registerDynamic("e3", ["e2"], true, function(require, exports, module) {
-  ;
-  var global = this,
-      __define = global.define;
-  global.define = undefined;
-  module.exports = require("e2");
-  global.define = __define;
-  return module.exports;
-});
-
-$__System.registerDynamic("e4", ["8a", "76", "e3", "72"], true, function(require, exports, module) {
-  ;
-  var global = this,
-      __define = global.define;
-  global.define = undefined;
-  (function(Buffer) {
-    var Transform = require("8a").Transform;
-    var inherits = require("76");
-    var StringDecoder = require("e3").StringDecoder;
-    module.exports = CipherBase;
-    inherits(CipherBase, Transform);
-    function CipherBase() {
-      Transform.call(this);
-      this._decoder = null;
-      this._encoding = null;
-    }
-    CipherBase.prototype.update = function(data, inputEnc, outputEnc) {
-      if (typeof data === 'string') {
-        data = new Buffer(data, inputEnc);
-      }
-      var outData = this._update(data);
-      if (outputEnc) {
-        outData = this._toString(outData, outputEnc);
-      }
-      return outData;
-    };
-    CipherBase.prototype._transform = function(data, _, next) {
-      this.push(this._update(data));
-      next();
-    };
-    CipherBase.prototype._flush = function(next) {
-      try {
-        this.push(this._final());
-      } catch (e) {
-        return next(e);
-      }
-      next();
-    };
-    CipherBase.prototype.final = function(outputEnc) {
-      var outData = this._final() || new Buffer('');
-      if (outputEnc) {
-        outData = this._toString(outData, outputEnc, true);
-      }
-      return outData;
-    };
-    CipherBase.prototype._toString = function(value, enc, final) {
-      if (!this._decoder) {
-        this._decoder = new StringDecoder(enc);
-        this._encoding = enc;
-      }
-      if (this._encoding !== enc) {
-        throw new Error('can\'t switch encodings');
-      }
-      var out = this._decoder.write(value);
-      if (final) {
-        out += this._decoder.end();
-      }
-      return out;
-    };
-  })(require("72").Buffer);
-  global.define = __define;
-  return module.exports;
-});
-
-$__System.registerDynamic("e5", [], true, function(require, exports, module) {
+$__System.registerDynamic("e8", [], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -21456,87 +21481,14 @@ $__System.registerDynamic("e5", [], true, function(require, exports, module) {
   return module.exports;
 });
 
-$__System.registerDynamic("e6", ["ce", "72"], true, function(require, exports, module) {
+$__System.registerDynamic("e9", ["e7", "dd", "76", "72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   (function(Buffer) {
-    var md5 = require("ce");
-    module.exports = EVP_BytesToKey;
-    function EVP_BytesToKey(password, keyLen, ivLen) {
-      if (!Buffer.isBuffer(password)) {
-        password = new Buffer(password, 'binary');
-      }
-      keyLen = keyLen / 8;
-      ivLen = ivLen || 0;
-      var ki = 0;
-      var ii = 0;
-      var key = new Buffer(keyLen);
-      var iv = new Buffer(ivLen);
-      var addmd = 0;
-      var md_buf;
-      var i;
-      var bufs = [];
-      while (true) {
-        if (addmd++ > 0) {
-          bufs.push(md_buf);
-        }
-        bufs.push(password);
-        md_buf = md5(Buffer.concat(bufs));
-        bufs = [];
-        i = 0;
-        if (keyLen > 0) {
-          while (true) {
-            if (keyLen === 0) {
-              break;
-            }
-            if (i === md_buf.length) {
-              break;
-            }
-            key[ki++] = md_buf[i];
-            keyLen--;
-            i++;
-          }
-        }
-        if (ivLen > 0 && i !== md_buf.length) {
-          while (true) {
-            if (ivLen === 0) {
-              break;
-            }
-            if (i === md_buf.length) {
-              break;
-            }
-            iv[ii++] = md_buf[i];
-            ivLen--;
-            i++;
-          }
-        }
-        if (keyLen === 0 && ivLen === 0) {
-          break;
-        }
-      }
-      for (i = 0; i < md_buf.length; i++) {
-        md_buf[i] = 0;
-      }
-      return {
-        key: key,
-        iv: iv
-      };
-    }
-  })(require("72").Buffer);
-  global.define = __define;
-  return module.exports;
-});
-
-$__System.registerDynamic("e7", ["e1", "e4", "76", "72"], true, function(require, exports, module) {
-  ;
-  var global = this,
-      __define = global.define;
-  global.define = undefined;
-  (function(Buffer) {
-    var aes = require("e1");
-    var Transform = require("e4");
+    var aes = require("e7");
+    var Transform = require("dd");
     var inherits = require("76");
     inherits(StreamCipher, Transform);
     module.exports = StreamCipher;
@@ -21564,7 +21516,7 @@ $__System.registerDynamic("e7", ["e1", "e4", "76", "72"], true, function(require
   return module.exports;
 });
 
-$__System.registerDynamic("e8", ["72"], true, function(require, exports, module) {
+$__System.registerDynamic("ea", ["72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -21652,7 +21604,7 @@ $__System.registerDynamic("e8", ["72"], true, function(require, exports, module)
   return module.exports;
 });
 
-$__System.registerDynamic("e9", ["72"], true, function(require, exports, module) {
+$__System.registerDynamic("eb", ["72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -21671,27 +21623,27 @@ $__System.registerDynamic("e9", ["72"], true, function(require, exports, module)
   return module.exports;
 });
 
-$__System.registerDynamic("ea", ["e9"], true, function(require, exports, module) {
+$__System.registerDynamic("ec", ["eb"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("e9");
+  module.exports = require("eb");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("eb", ["e1", "e4", "76", "e8", "ea", "72"], true, function(require, exports, module) {
+$__System.registerDynamic("ed", ["e7", "dd", "76", "ea", "ec", "72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   (function(Buffer) {
-    var aes = require("e1");
-    var Transform = require("e4");
+    var aes = require("e7");
+    var Transform = require("dd");
     var inherits = require("76");
-    var GHASH = require("e8");
-    var xor = require("ea");
+    var GHASH = require("ea");
+    var xor = require("ec");
     inherits(StreamCipher, Transform);
     module.exports = StreamCipher;
     function StreamCipher(mode, key, iv, decrypt) {
@@ -21788,7 +21740,7 @@ $__System.registerDynamic("eb", ["e1", "e4", "76", "e8", "ea", "72"], true, func
   return module.exports;
 });
 
-$__System.registerDynamic("ec", [], true, function(require, exports, module) {
+$__System.registerDynamic("ee", [], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -21803,12 +21755,12 @@ $__System.registerDynamic("ec", [], true, function(require, exports, module) {
   return module.exports;
 });
 
-$__System.registerDynamic("ed", ["ea"], true, function(require, exports, module) {
+$__System.registerDynamic("ef", ["ec"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  var xor = require("ea");
+  var xor = require("ec");
   exports.encrypt = function(self, block) {
     var data = xor(block, self._prev);
     self._prev = self._cipher.encryptBlock(data);
@@ -21824,13 +21776,13 @@ $__System.registerDynamic("ed", ["ea"], true, function(require, exports, module)
   return module.exports;
 });
 
-$__System.registerDynamic("ee", ["ea", "72"], true, function(require, exports, module) {
+$__System.registerDynamic("f0", ["ec", "72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   (function(Buffer) {
-    var xor = require("ea");
+    var xor = require("ec");
     exports.encrypt = function(self, data, decrypt) {
       var out = new Buffer('');
       var len;
@@ -21862,7 +21814,7 @@ $__System.registerDynamic("ee", ["ea", "72"], true, function(require, exports, m
   return module.exports;
 });
 
-$__System.registerDynamic("ef", ["72"], true, function(require, exports, module) {
+$__System.registerDynamic("f1", ["72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -21888,7 +21840,7 @@ $__System.registerDynamic("ef", ["72"], true, function(require, exports, module)
   return module.exports;
 });
 
-$__System.registerDynamic("f0", ["72"], true, function(require, exports, module) {
+$__System.registerDynamic("f2", ["72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -21934,13 +21886,13 @@ $__System.registerDynamic("f0", ["72"], true, function(require, exports, module)
   return module.exports;
 });
 
-$__System.registerDynamic("f1", ["ea", "72"], true, function(require, exports, module) {
+$__System.registerDynamic("f3", ["ec", "72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   (function(Buffer) {
-    var xor = require("ea");
+    var xor = require("ec");
     function getBlock(self) {
       self._prev = self._cipher.encryptBlock(self._prev);
       return self._prev;
@@ -21958,13 +21910,13 @@ $__System.registerDynamic("f1", ["ea", "72"], true, function(require, exports, m
   return module.exports;
 });
 
-$__System.registerDynamic("f2", ["ea", "72"], true, function(require, exports, module) {
+$__System.registerDynamic("f4", ["ec", "72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   (function(Buffer) {
-    var xor = require("ea");
+    var xor = require("ec");
     function incr32(iv) {
       var len = iv.length;
       var item;
@@ -21997,19 +21949,19 @@ $__System.registerDynamic("f2", ["ea", "72"], true, function(require, exports, m
   return module.exports;
 });
 
-$__System.registerDynamic("f3", ["e1", "e4", "76", "e5", "e6", "e7", "eb", "ec", "ed", "ee", "ef", "f0", "f1", "f2", "72"], true, function(require, exports, module) {
+$__System.registerDynamic("f5", ["e7", "dd", "76", "e8", "e6", "e9", "ed", "ee", "ef", "f0", "f1", "f2", "f3", "f4", "72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   (function(Buffer) {
-    var aes = require("e1");
-    var Transform = require("e4");
+    var aes = require("e7");
+    var Transform = require("dd");
     var inherits = require("76");
-    var modes = require("e5");
+    var modes = require("e8");
     var ebtk = require("e6");
-    var StreamCipher = require("e7");
-    var AuthCipher = require("eb");
+    var StreamCipher = require("e9");
+    var AuthCipher = require("ed");
     inherits(Cipher, Transform);
     function Cipher(mode, key, iv) {
       if (!(this instanceof Cipher)) {
@@ -22076,14 +22028,14 @@ $__System.registerDynamic("f3", ["e1", "e4", "76", "e5", "e6", "e7", "eb", "ec",
       return out;
     };
     var modelist = {
-      ECB: require("ec"),
-      CBC: require("ed"),
-      CFB: require("ee"),
-      CFB8: require("ef"),
-      CFB1: require("f0"),
-      OFB: require("f1"),
-      CTR: require("f2"),
-      GCM: require("f2")
+      ECB: require("ee"),
+      CBC: require("ef"),
+      CFB: require("f0"),
+      CFB8: require("f1"),
+      CFB1: require("f2"),
+      OFB: require("f3"),
+      CTR: require("f4"),
+      GCM: require("f4")
     };
     function createCipheriv(suite, password, iv) {
       var config = modes[suite.toLowerCase()];
@@ -22114,7 +22066,7 @@ $__System.registerDynamic("f3", ["e1", "e4", "76", "e5", "e6", "e7", "eb", "ec",
       if (!config) {
         throw new TypeError('invalid suite type');
       }
-      var keys = ebtk(password, config.key, config.iv);
+      var keys = ebtk(password, false, config.key, config.iv);
       return createCipheriv(suite, keys.key, keys.iv);
     }
     exports.createCipheriv = createCipheriv;
@@ -22124,18 +22076,18 @@ $__System.registerDynamic("f3", ["e1", "e4", "76", "e5", "e6", "e7", "eb", "ec",
   return module.exports;
 });
 
-$__System.registerDynamic("f4", ["e1", "e4", "76", "e5", "e7", "eb", "e6", "ec", "ed", "ee", "ef", "f0", "f1", "f2", "72"], true, function(require, exports, module) {
+$__System.registerDynamic("f6", ["e7", "dd", "76", "e8", "e9", "ed", "e6", "ee", "ef", "f0", "f1", "f2", "f3", "f4", "72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   (function(Buffer) {
-    var aes = require("e1");
-    var Transform = require("e4");
+    var aes = require("e7");
+    var Transform = require("dd");
     var inherits = require("76");
-    var modes = require("e5");
-    var StreamCipher = require("e7");
-    var AuthCipher = require("eb");
+    var modes = require("e8");
+    var StreamCipher = require("e9");
+    var AuthCipher = require("ed");
     var ebtk = require("e6");
     inherits(Decipher, Transform);
     function Decipher(mode, key, iv) {
@@ -22218,14 +22170,14 @@ $__System.registerDynamic("f4", ["e1", "e4", "76", "e5", "e7", "eb", "e6", "ec",
       return last.slice(0, 16 - padded);
     }
     var modelist = {
-      ECB: require("ec"),
-      CBC: require("ed"),
-      CFB: require("ee"),
-      CFB8: require("ef"),
-      CFB1: require("f0"),
-      OFB: require("f1"),
-      CTR: require("f2"),
-      GCM: require("f2")
+      ECB: require("ee"),
+      CBC: require("ef"),
+      CFB: require("f0"),
+      CFB8: require("f1"),
+      CFB1: require("f2"),
+      OFB: require("f3"),
+      CTR: require("f4"),
+      GCM: require("f4")
     };
     function createDecipheriv(suite, password, iv) {
       var config = modes[suite.toLowerCase()];
@@ -22256,7 +22208,7 @@ $__System.registerDynamic("f4", ["e1", "e4", "76", "e5", "e7", "eb", "e6", "ec",
       if (!config) {
         throw new TypeError('invalid suite type');
       }
-      var keys = ebtk(password, config.key, config.iv);
+      var keys = ebtk(password, false, config.key, config.iv);
       return createDecipheriv(suite, keys.key, keys.iv);
     }
     exports.createDecipher = createDecipher;
@@ -22266,18 +22218,18 @@ $__System.registerDynamic("f4", ["e1", "e4", "76", "e5", "e7", "eb", "e6", "ec",
   return module.exports;
 });
 
-$__System.registerDynamic("f5", ["f3", "f4", "e5"], true, function(require, exports, module) {
+$__System.registerDynamic("f7", ["f5", "f6", "e8"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  var ciphers = require("f3");
+  var ciphers = require("f5");
   exports.createCipher = exports.Cipher = ciphers.createCipher;
   exports.createCipheriv = exports.Cipheriv = ciphers.createCipheriv;
-  var deciphers = require("f4");
+  var deciphers = require("f6");
   exports.createDecipher = exports.Decipher = deciphers.createDecipher;
   exports.createDecipheriv = exports.Decipheriv = deciphers.createDecipheriv;
-  var modes = require("e5");
+  var modes = require("e8");
   function getCiphers() {
     return Object.keys(modes);
   }
@@ -22286,17 +22238,760 @@ $__System.registerDynamic("f5", ["f3", "f4", "e5"], true, function(require, expo
   return module.exports;
 });
 
-$__System.registerDynamic("f6", ["f5"], true, function(require, exports, module) {
+$__System.registerDynamic("f8", [], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("f5");
+  'use strict';
+  exports.readUInt32BE = function readUInt32BE(bytes, off) {
+    var res = (bytes[0 + off] << 24) | (bytes[1 + off] << 16) | (bytes[2 + off] << 8) | bytes[3 + off];
+    return res >>> 0;
+  };
+  exports.writeUInt32BE = function writeUInt32BE(bytes, value, off) {
+    bytes[0 + off] = value >>> 24;
+    bytes[1 + off] = (value >>> 16) & 0xff;
+    bytes[2 + off] = (value >>> 8) & 0xff;
+    bytes[3 + off] = value & 0xff;
+  };
+  exports.ip = function ip(inL, inR, out, off) {
+    var outL = 0;
+    var outR = 0;
+    for (var i = 6; i >= 0; i -= 2) {
+      for (var j = 0; j <= 24; j += 8) {
+        outL <<= 1;
+        outL |= (inR >>> (j + i)) & 1;
+      }
+      for (var j = 0; j <= 24; j += 8) {
+        outL <<= 1;
+        outL |= (inL >>> (j + i)) & 1;
+      }
+    }
+    for (var i = 6; i >= 0; i -= 2) {
+      for (var j = 1; j <= 25; j += 8) {
+        outR <<= 1;
+        outR |= (inR >>> (j + i)) & 1;
+      }
+      for (var j = 1; j <= 25; j += 8) {
+        outR <<= 1;
+        outR |= (inL >>> (j + i)) & 1;
+      }
+    }
+    out[off + 0] = outL >>> 0;
+    out[off + 1] = outR >>> 0;
+  };
+  exports.rip = function rip(inL, inR, out, off) {
+    var outL = 0;
+    var outR = 0;
+    for (var i = 0; i < 4; i++) {
+      for (var j = 24; j >= 0; j -= 8) {
+        outL <<= 1;
+        outL |= (inR >>> (j + i)) & 1;
+        outL <<= 1;
+        outL |= (inL >>> (j + i)) & 1;
+      }
+    }
+    for (var i = 4; i < 8; i++) {
+      for (var j = 24; j >= 0; j -= 8) {
+        outR <<= 1;
+        outR |= (inR >>> (j + i)) & 1;
+        outR <<= 1;
+        outR |= (inL >>> (j + i)) & 1;
+      }
+    }
+    out[off + 0] = outL >>> 0;
+    out[off + 1] = outR >>> 0;
+  };
+  exports.pc1 = function pc1(inL, inR, out, off) {
+    var outL = 0;
+    var outR = 0;
+    for (var i = 7; i >= 5; i--) {
+      for (var j = 0; j <= 24; j += 8) {
+        outL <<= 1;
+        outL |= (inR >> (j + i)) & 1;
+      }
+      for (var j = 0; j <= 24; j += 8) {
+        outL <<= 1;
+        outL |= (inL >> (j + i)) & 1;
+      }
+    }
+    for (var j = 0; j <= 24; j += 8) {
+      outL <<= 1;
+      outL |= (inR >> (j + i)) & 1;
+    }
+    for (var i = 1; i <= 3; i++) {
+      for (var j = 0; j <= 24; j += 8) {
+        outR <<= 1;
+        outR |= (inR >> (j + i)) & 1;
+      }
+      for (var j = 0; j <= 24; j += 8) {
+        outR <<= 1;
+        outR |= (inL >> (j + i)) & 1;
+      }
+    }
+    for (var j = 0; j <= 24; j += 8) {
+      outR <<= 1;
+      outR |= (inL >> (j + i)) & 1;
+    }
+    out[off + 0] = outL >>> 0;
+    out[off + 1] = outR >>> 0;
+  };
+  exports.r28shl = function r28shl(num, shift) {
+    return ((num << shift) & 0xfffffff) | (num >>> (28 - shift));
+  };
+  var pc2table = [14, 11, 17, 4, 27, 23, 25, 0, 13, 22, 7, 18, 5, 9, 16, 24, 2, 20, 12, 21, 1, 8, 15, 26, 15, 4, 25, 19, 9, 1, 26, 16, 5, 11, 23, 8, 12, 7, 17, 0, 22, 3, 10, 14, 6, 20, 27, 24];
+  exports.pc2 = function pc2(inL, inR, out, off) {
+    var outL = 0;
+    var outR = 0;
+    var len = pc2table.length >>> 1;
+    for (var i = 0; i < len; i++) {
+      outL <<= 1;
+      outL |= (inL >>> pc2table[i]) & 0x1;
+    }
+    for (var i = len; i < pc2table.length; i++) {
+      outR <<= 1;
+      outR |= (inR >>> pc2table[i]) & 0x1;
+    }
+    out[off + 0] = outL >>> 0;
+    out[off + 1] = outR >>> 0;
+  };
+  exports.expand = function expand(r, out, off) {
+    var outL = 0;
+    var outR = 0;
+    outL = ((r & 1) << 5) | (r >>> 27);
+    for (var i = 23; i >= 15; i -= 4) {
+      outL <<= 6;
+      outL |= (r >>> i) & 0x3f;
+    }
+    for (var i = 11; i >= 3; i -= 4) {
+      outR |= (r >>> i) & 0x3f;
+      outR <<= 6;
+    }
+    outR |= ((r & 0x1f) << 1) | (r >>> 31);
+    out[off + 0] = outL >>> 0;
+    out[off + 1] = outR >>> 0;
+  };
+  var sTable = [14, 0, 4, 15, 13, 7, 1, 4, 2, 14, 15, 2, 11, 13, 8, 1, 3, 10, 10, 6, 6, 12, 12, 11, 5, 9, 9, 5, 0, 3, 7, 8, 4, 15, 1, 12, 14, 8, 8, 2, 13, 4, 6, 9, 2, 1, 11, 7, 15, 5, 12, 11, 9, 3, 7, 14, 3, 10, 10, 0, 5, 6, 0, 13, 15, 3, 1, 13, 8, 4, 14, 7, 6, 15, 11, 2, 3, 8, 4, 14, 9, 12, 7, 0, 2, 1, 13, 10, 12, 6, 0, 9, 5, 11, 10, 5, 0, 13, 14, 8, 7, 10, 11, 1, 10, 3, 4, 15, 13, 4, 1, 2, 5, 11, 8, 6, 12, 7, 6, 12, 9, 0, 3, 5, 2, 14, 15, 9, 10, 13, 0, 7, 9, 0, 14, 9, 6, 3, 3, 4, 15, 6, 5, 10, 1, 2, 13, 8, 12, 5, 7, 14, 11, 12, 4, 11, 2, 15, 8, 1, 13, 1, 6, 10, 4, 13, 9, 0, 8, 6, 15, 9, 3, 8, 0, 7, 11, 4, 1, 15, 2, 14, 12, 3, 5, 11, 10, 5, 14, 2, 7, 12, 7, 13, 13, 8, 14, 11, 3, 5, 0, 6, 6, 15, 9, 0, 10, 3, 1, 4, 2, 7, 8, 2, 5, 12, 11, 1, 12, 10, 4, 14, 15, 9, 10, 3, 6, 15, 9, 0, 0, 6, 12, 10, 11, 1, 7, 13, 13, 8, 15, 9, 1, 4, 3, 5, 14, 11, 5, 12, 2, 7, 8, 2, 4, 14, 2, 14, 12, 11, 4, 2, 1, 12, 7, 4, 10, 7, 11, 13, 6, 1, 8, 5, 5, 0, 3, 15, 15, 10, 13, 3, 0, 9, 14, 8, 9, 6, 4, 11, 2, 8, 1, 12, 11, 7, 10, 1, 13, 14, 7, 2, 8, 13, 15, 6, 9, 15, 12, 0, 5, 9, 6, 10, 3, 4, 0, 5, 14, 3, 12, 10, 1, 15, 10, 4, 15, 2, 9, 7, 2, 12, 6, 9, 8, 5, 0, 6, 13, 1, 3, 13, 4, 14, 14, 0, 7, 11, 5, 3, 11, 8, 9, 4, 14, 3, 15, 2, 5, 12, 2, 9, 8, 5, 12, 15, 3, 10, 7, 11, 0, 14, 4, 1, 10, 7, 1, 6, 13, 0, 11, 8, 6, 13, 4, 13, 11, 0, 2, 11, 14, 7, 15, 4, 0, 9, 8, 1, 13, 10, 3, 14, 12, 3, 9, 5, 7, 12, 5, 2, 10, 15, 6, 8, 1, 6, 1, 6, 4, 11, 11, 13, 13, 8, 12, 1, 3, 4, 7, 10, 14, 7, 10, 9, 15, 5, 6, 0, 8, 15, 0, 14, 5, 2, 9, 3, 2, 12, 13, 1, 2, 15, 8, 13, 4, 8, 6, 10, 15, 3, 11, 7, 1, 4, 10, 12, 9, 5, 3, 6, 14, 11, 5, 0, 0, 14, 12, 9, 7, 2, 7, 2, 11, 1, 4, 14, 1, 7, 9, 4, 12, 10, 14, 8, 2, 13, 0, 15, 6, 12, 10, 9, 13, 0, 15, 3, 3, 5, 5, 6, 8, 11];
+  exports.substitute = function substitute(inL, inR) {
+    var out = 0;
+    for (var i = 0; i < 4; i++) {
+      var b = (inL >>> (18 - i * 6)) & 0x3f;
+      var sb = sTable[i * 0x40 + b];
+      out <<= 4;
+      out |= sb;
+    }
+    for (var i = 0; i < 4; i++) {
+      var b = (inR >>> (18 - i * 6)) & 0x3f;
+      var sb = sTable[4 * 0x40 + i * 0x40 + b];
+      out <<= 4;
+      out |= sb;
+    }
+    return out >>> 0;
+  };
+  var permuteTable = [16, 25, 12, 11, 3, 20, 4, 15, 31, 17, 9, 6, 27, 14, 1, 22, 30, 24, 8, 18, 0, 5, 29, 23, 13, 19, 2, 26, 10, 21, 28, 7];
+  exports.permute = function permute(num) {
+    var out = 0;
+    for (var i = 0; i < permuteTable.length; i++) {
+      out <<= 1;
+      out |= (num >>> permuteTable[i]) & 0x1;
+    }
+    return out >>> 0;
+  };
+  exports.padSplit = function padSplit(num, size, group) {
+    var str = num.toString(2);
+    while (str.length < size)
+      str = '0' + str;
+    var out = [];
+    for (var i = 0; i < size; i += group)
+      out.push(str.slice(i, i + group));
+    return out.join(' ');
+  };
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("f7", [], true, function(require, exports, module) {
+$__System.registerDynamic("f9", [], true, function(require, exports, module) {
+  ;
+  var global = this,
+      __define = global.define;
+  global.define = undefined;
+  module.exports = assert;
+  function assert(val, msg) {
+    if (!val)
+      throw new Error(msg || 'Assertion failed');
+  }
+  assert.equal = function assertEqual(l, r, msg) {
+    if (l != r)
+      throw new Error(msg || ('Assertion failed: ' + l + ' != ' + r));
+  };
+  global.define = __define;
+  return module.exports;
+});
+
+$__System.registerDynamic("fa", ["f9"], true, function(require, exports, module) {
+  ;
+  var global = this,
+      __define = global.define;
+  global.define = undefined;
+  module.exports = require("f9");
+  global.define = __define;
+  return module.exports;
+});
+
+$__System.registerDynamic("fb", ["fa", "72"], true, function(require, exports, module) {
+  ;
+  var global = this,
+      __define = global.define;
+  global.define = undefined;
+  (function(Buffer) {
+    'use strict';
+    var assert = require("fa");
+    function Cipher(options) {
+      this.options = options;
+      this.type = this.options.type;
+      this.blockSize = 8;
+      this._init();
+      this.buffer = new Array(this.blockSize);
+      this.bufferOff = 0;
+    }
+    module.exports = Cipher;
+    Cipher.prototype._init = function _init() {};
+    Cipher.prototype.update = function update(data) {
+      if (data.length === 0)
+        return [];
+      if (this.type === 'decrypt')
+        return this._updateDecrypt(data);
+      else
+        return this._updateEncrypt(data);
+    };
+    Cipher.prototype._buffer = function _buffer(data, off) {
+      var min = Math.min(this.buffer.length - this.bufferOff, data.length - off);
+      for (var i = 0; i < min; i++)
+        this.buffer[this.bufferOff + i] = data[off + i];
+      this.bufferOff += min;
+      return min;
+    };
+    Cipher.prototype._flushBuffer = function _flushBuffer(out, off) {
+      this._update(this.buffer, 0, out, off);
+      this.bufferOff = 0;
+      return this.blockSize;
+    };
+    Cipher.prototype._updateEncrypt = function _updateEncrypt(data) {
+      var inputOff = 0;
+      var outputOff = 0;
+      var count = ((this.bufferOff + data.length) / this.blockSize) | 0;
+      var out = new Array(count * this.blockSize);
+      if (this.bufferOff !== 0) {
+        inputOff += this._buffer(data, inputOff);
+        if (this.bufferOff === this.buffer.length)
+          outputOff += this._flushBuffer(out, outputOff);
+      }
+      var max = data.length - ((data.length - inputOff) % this.blockSize);
+      for (; inputOff < max; inputOff += this.blockSize) {
+        this._update(data, inputOff, out, outputOff);
+        outputOff += this.blockSize;
+      }
+      for (; inputOff < data.length; inputOff++, this.bufferOff++)
+        this.buffer[this.bufferOff] = data[inputOff];
+      return out;
+    };
+    Cipher.prototype._updateDecrypt = function _updateDecrypt(data) {
+      var inputOff = 0;
+      var outputOff = 0;
+      var count = Math.ceil((this.bufferOff + data.length) / this.blockSize) - 1;
+      var out = new Array(count * this.blockSize);
+      for (; count > 0; count--) {
+        inputOff += this._buffer(data, inputOff);
+        outputOff += this._flushBuffer(out, outputOff);
+      }
+      inputOff += this._buffer(data, inputOff);
+      return out;
+    };
+    Cipher.prototype.final = function final(buffer) {
+      var first;
+      if (buffer)
+        first = this.update(buffer);
+      var last;
+      if (this.type === 'encrypt')
+        last = this._finalEncrypt();
+      else
+        last = this._finalDecrypt();
+      if (first)
+        return first.concat(last);
+      else
+        return last;
+    };
+    Cipher.prototype._pad = function _pad(buffer, off) {
+      if (off === 0)
+        return false;
+      while (off < buffer.length)
+        buffer[off++] = 0;
+      return true;
+    };
+    Cipher.prototype._finalEncrypt = function _finalEncrypt() {
+      if (!this._pad(this.buffer, this.bufferOff))
+        return [];
+      var out = new Array(this.blockSize);
+      this._update(this.buffer, 0, out, 0);
+      return out;
+    };
+    Cipher.prototype._unpad = function _unpad(buffer) {
+      return buffer;
+    };
+    Cipher.prototype._finalDecrypt = function _finalDecrypt() {
+      assert.equal(this.bufferOff, this.blockSize, 'Not enough data to decrypt');
+      var out = new Array(this.blockSize);
+      this._flushBuffer(out, 0);
+      return this._unpad(out);
+    };
+  })(require("72").Buffer);
+  global.define = __define;
+  return module.exports;
+});
+
+$__System.registerDynamic("fc", ["fa", "76", "fd"], true, function(require, exports, module) {
+  ;
+  var global = this,
+      __define = global.define;
+  global.define = undefined;
+  'use strict';
+  var assert = require("fa");
+  var inherits = require("76");
+  var des = require("fd");
+  var utils = des.utils;
+  var Cipher = des.Cipher;
+  function DESState() {
+    this.tmp = new Array(2);
+    this.keys = null;
+  }
+  function DES(options) {
+    Cipher.call(this, options);
+    var state = new DESState();
+    this._desState = state;
+    this.deriveKeys(state, options.key);
+  }
+  inherits(DES, Cipher);
+  module.exports = DES;
+  DES.create = function create(options) {
+    return new DES(options);
+  };
+  var shiftTable = [1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1];
+  DES.prototype.deriveKeys = function deriveKeys(state, key) {
+    state.keys = new Array(16 * 2);
+    assert.equal(key.length, this.blockSize, 'Invalid key length');
+    var kL = utils.readUInt32BE(key, 0);
+    var kR = utils.readUInt32BE(key, 4);
+    utils.pc1(kL, kR, state.tmp, 0);
+    kL = state.tmp[0];
+    kR = state.tmp[1];
+    for (var i = 0; i < state.keys.length; i += 2) {
+      var shift = shiftTable[i >>> 1];
+      kL = utils.r28shl(kL, shift);
+      kR = utils.r28shl(kR, shift);
+      utils.pc2(kL, kR, state.keys, i);
+    }
+  };
+  DES.prototype._update = function _update(inp, inOff, out, outOff) {
+    var state = this._desState;
+    var l = utils.readUInt32BE(inp, inOff);
+    var r = utils.readUInt32BE(inp, inOff + 4);
+    utils.ip(l, r, state.tmp, 0);
+    l = state.tmp[0];
+    r = state.tmp[1];
+    if (this.type === 'encrypt')
+      this._encrypt(state, l, r, state.tmp, 0);
+    else
+      this._decrypt(state, l, r, state.tmp, 0);
+    l = state.tmp[0];
+    r = state.tmp[1];
+    utils.writeUInt32BE(out, l, outOff);
+    utils.writeUInt32BE(out, r, outOff + 4);
+  };
+  DES.prototype._pad = function _pad(buffer, off) {
+    var value = buffer.length - off;
+    for (var i = off; i < buffer.length; i++)
+      buffer[i] = value;
+    return true;
+  };
+  DES.prototype._unpad = function _unpad(buffer) {
+    var pad = buffer[buffer.length - 1];
+    for (var i = buffer.length - pad; i < buffer.length; i++)
+      assert.equal(buffer[i], pad);
+    return buffer.slice(0, buffer.length - pad);
+  };
+  DES.prototype._encrypt = function _encrypt(state, lStart, rStart, out, off) {
+    var l = lStart;
+    var r = rStart;
+    for (var i = 0; i < state.keys.length; i += 2) {
+      var keyL = state.keys[i];
+      var keyR = state.keys[i + 1];
+      utils.expand(r, state.tmp, 0);
+      keyL ^= state.tmp[0];
+      keyR ^= state.tmp[1];
+      var s = utils.substitute(keyL, keyR);
+      var f = utils.permute(s);
+      var t = r;
+      r = (l ^ f) >>> 0;
+      l = t;
+    }
+    utils.rip(r, l, out, off);
+  };
+  DES.prototype._decrypt = function _decrypt(state, lStart, rStart, out, off) {
+    var l = rStart;
+    var r = lStart;
+    for (var i = state.keys.length - 2; i >= 0; i -= 2) {
+      var keyL = state.keys[i];
+      var keyR = state.keys[i + 1];
+      utils.expand(l, state.tmp, 0);
+      keyL ^= state.tmp[0];
+      keyR ^= state.tmp[1];
+      var s = utils.substitute(keyL, keyR);
+      var f = utils.permute(s);
+      var t = l;
+      l = (r ^ f) >>> 0;
+      r = t;
+    }
+    utils.rip(l, r, out, off);
+  };
+  global.define = __define;
+  return module.exports;
+});
+
+$__System.registerDynamic("fe", ["fa", "76"], true, function(require, exports, module) {
+  ;
+  var global = this,
+      __define = global.define;
+  global.define = undefined;
+  'use strict';
+  var assert = require("fa");
+  var inherits = require("76");
+  var proto = {};
+  function CBCState(iv) {
+    assert.equal(iv.length, 8, 'Invalid IV length');
+    this.iv = new Array(8);
+    for (var i = 0; i < this.iv.length; i++)
+      this.iv[i] = iv[i];
+  }
+  function instantiate(Base) {
+    function CBC(options) {
+      Base.call(this, options);
+      this._cbcInit();
+    }
+    inherits(CBC, Base);
+    var keys = Object.keys(proto);
+    for (var i = 0; i < keys.length; i++) {
+      var key = keys[i];
+      CBC.prototype[key] = proto[key];
+    }
+    CBC.create = function create(options) {
+      return new CBC(options);
+    };
+    return CBC;
+  }
+  exports.instantiate = instantiate;
+  proto._cbcInit = function _cbcInit() {
+    var state = new CBCState(this.options.iv);
+    this._cbcState = state;
+  };
+  proto._update = function _update(inp, inOff, out, outOff) {
+    var state = this._cbcState;
+    var superProto = this.constructor.super_.prototype;
+    var iv = state.iv;
+    if (this.type === 'encrypt') {
+      for (var i = 0; i < this.blockSize; i++)
+        iv[i] ^= inp[inOff + i];
+      superProto._update.call(this, iv, 0, out, outOff);
+      for (var i = 0; i < this.blockSize; i++)
+        iv[i] = out[outOff + i];
+    } else {
+      superProto._update.call(this, inp, inOff, out, outOff);
+      for (var i = 0; i < this.blockSize; i++)
+        out[outOff + i] ^= iv[i];
+      for (var i = 0; i < this.blockSize; i++)
+        iv[i] = inp[inOff + i];
+    }
+  };
+  global.define = __define;
+  return module.exports;
+});
+
+$__System.registerDynamic("ff", ["fa", "76", "fd"], true, function(require, exports, module) {
+  ;
+  var global = this,
+      __define = global.define;
+  global.define = undefined;
+  'use strict';
+  var assert = require("fa");
+  var inherits = require("76");
+  var des = require("fd");
+  var Cipher = des.Cipher;
+  var DES = des.DES;
+  function EDEState(type, key) {
+    assert.equal(key.length, 24, 'Invalid key length');
+    var k1 = key.slice(0, 8);
+    var k2 = key.slice(8, 16);
+    var k3 = key.slice(16, 24);
+    if (type === 'encrypt') {
+      this.ciphers = [DES.create({
+        type: 'encrypt',
+        key: k1
+      }), DES.create({
+        type: 'decrypt',
+        key: k2
+      }), DES.create({
+        type: 'encrypt',
+        key: k3
+      })];
+    } else {
+      this.ciphers = [DES.create({
+        type: 'decrypt',
+        key: k3
+      }), DES.create({
+        type: 'encrypt',
+        key: k2
+      }), DES.create({
+        type: 'decrypt',
+        key: k1
+      })];
+    }
+  }
+  function EDE(options) {
+    Cipher.call(this, options);
+    var state = new EDEState(this.type, this.options.key);
+    this._edeState = state;
+  }
+  inherits(EDE, Cipher);
+  module.exports = EDE;
+  EDE.create = function create(options) {
+    return new EDE(options);
+  };
+  EDE.prototype._update = function _update(inp, inOff, out, outOff) {
+    var state = this._edeState;
+    state.ciphers[0]._update(inp, inOff, out, outOff);
+    state.ciphers[1]._update(out, outOff, out, outOff);
+    state.ciphers[2]._update(out, outOff, out, outOff);
+  };
+  EDE.prototype._pad = DES.prototype._pad;
+  EDE.prototype._unpad = DES.prototype._unpad;
+  global.define = __define;
+  return module.exports;
+});
+
+$__System.registerDynamic("fd", ["f8", "fb", "fc", "fe", "ff"], true, function(require, exports, module) {
+  ;
+  var global = this,
+      __define = global.define;
+  global.define = undefined;
+  'use strict';
+  exports.utils = require("f8");
+  exports.Cipher = require("fb");
+  exports.DES = require("fc");
+  exports.CBC = require("fe");
+  exports.EDE = require("ff");
+  global.define = __define;
+  return module.exports;
+});
+
+$__System.registerDynamic("100", ["fd"], true, function(require, exports, module) {
+  ;
+  var global = this,
+      __define = global.define;
+  global.define = undefined;
+  module.exports = require("fd");
+  global.define = __define;
+  return module.exports;
+});
+
+$__System.registerDynamic("101", ["dd", "100", "76", "72"], true, function(require, exports, module) {
+  ;
+  var global = this,
+      __define = global.define;
+  global.define = undefined;
+  (function(Buffer) {
+    var CipherBase = require("dd");
+    var des = require("100");
+    var inherits = require("76");
+    var modes = {
+      'des-ede3-cbc': des.CBC.instantiate(des.EDE),
+      'des-ede3': des.EDE,
+      'des-ede-cbc': des.CBC.instantiate(des.EDE),
+      'des-ede': des.EDE,
+      'des-cbc': des.CBC.instantiate(des.DES),
+      'des-ecb': des.DES
+    };
+    modes.des = modes['des-cbc'];
+    modes.des3 = modes['des-ede3-cbc'];
+    module.exports = DES;
+    inherits(DES, CipherBase);
+    function DES(opts) {
+      CipherBase.call(this);
+      var modeName = opts.mode.toLowerCase();
+      var mode = modes[modeName];
+      var type;
+      if (opts.decrypt) {
+        type = 'decrypt';
+      } else {
+        type = 'encrypt';
+      }
+      var key = opts.key;
+      if (modeName === 'des-ede' || modeName === 'des-ede-cbc') {
+        key = Buffer.concat([key, key.slice(0, 8)]);
+      }
+      var iv = opts.iv;
+      this._des = mode.create({
+        key: key,
+        iv: iv,
+        type: type
+      });
+    }
+    DES.prototype._update = function(data) {
+      return new Buffer(this._des.update(data));
+    };
+    DES.prototype._final = function() {
+      return new Buffer(this._des.final());
+    };
+  })(require("72").Buffer);
+  global.define = __define;
+  return module.exports;
+});
+
+$__System.registerDynamic("102", ["101"], true, function(require, exports, module) {
+  ;
+  var global = this,
+      __define = global.define;
+  global.define = undefined;
+  module.exports = require("101");
+  global.define = __define;
+  return module.exports;
+});
+
+$__System.registerDynamic("103", [], true, function(require, exports, module) {
+  ;
+  var global = this,
+      __define = global.define;
+  global.define = undefined;
+  exports['des-ecb'] = {
+    key: 8,
+    iv: 0
+  };
+  exports['des-cbc'] = exports.des = {
+    key: 8,
+    iv: 8
+  };
+  exports['des-ede3-cbc'] = exports.des3 = {
+    key: 24,
+    iv: 8
+  };
+  exports['des-ede3'] = {
+    key: 24,
+    iv: 0
+  };
+  exports['des-ede-cbc'] = {
+    key: 16,
+    iv: 8
+  };
+  exports['des-ede'] = {
+    key: 16,
+    iv: 0
+  };
+  global.define = __define;
+  return module.exports;
+});
+
+$__System.registerDynamic("104", ["e6", "f7", "102", "103", "e8"], true, function(require, exports, module) {
+  ;
+  var global = this,
+      __define = global.define;
+  global.define = undefined;
+  var ebtk = require("e6");
+  var aes = require("f7");
+  var DES = require("102");
+  var desModes = require("103");
+  var aesModes = require("e8");
+  function createCipher(suite, password) {
+    var keyLen,
+        ivLen;
+    suite = suite.toLowerCase();
+    if (aesModes[suite]) {
+      keyLen = aesModes[suite].key;
+      ivLen = aesModes[suite].iv;
+    } else if (desModes[suite]) {
+      keyLen = desModes[suite].key * 8;
+      ivLen = desModes[suite].iv;
+    } else {
+      throw new TypeError('invalid suite type');
+    }
+    var keys = ebtk(password, false, keyLen, ivLen);
+    return createCipheriv(suite, keys.key, keys.iv);
+  }
+  function createDecipher(suite, password) {
+    var keyLen,
+        ivLen;
+    suite = suite.toLowerCase();
+    if (aesModes[suite]) {
+      keyLen = aesModes[suite].key;
+      ivLen = aesModes[suite].iv;
+    } else if (desModes[suite]) {
+      keyLen = desModes[suite].key * 8;
+      ivLen = desModes[suite].iv;
+    } else {
+      throw new TypeError('invalid suite type');
+    }
+    var keys = ebtk(password, false, keyLen, ivLen);
+    return createDecipheriv(suite, keys.key, keys.iv);
+  }
+  function createCipheriv(suite, key, iv) {
+    suite = suite.toLowerCase();
+    if (aesModes[suite]) {
+      return aes.createCipheriv(suite, key, iv);
+    } else if (desModes[suite]) {
+      return new DES({
+        key: key,
+        iv: iv,
+        mode: suite
+      });
+    } else {
+      throw new TypeError('invalid suite type');
+    }
+  }
+  function createDecipheriv(suite, key, iv) {
+    suite = suite.toLowerCase();
+    if (aesModes[suite]) {
+      return aes.createDecipheriv(suite, key, iv);
+    } else if (desModes[suite]) {
+      return new DES({
+        key: key,
+        iv: iv,
+        mode: suite,
+        decrypt: true
+      });
+    } else {
+      throw new TypeError('invalid suite type');
+    }
+  }
+  exports.createCipher = exports.Cipher = createCipher;
+  exports.createCipheriv = exports.Cipheriv = createCipheriv;
+  exports.createDecipher = exports.Decipher = createDecipher;
+  exports.createDecipheriv = exports.Decipheriv = createDecipheriv;
+  function getCiphers() {
+    return Object.keys(desModes).concat(aes.getCiphers());
+  }
+  exports.listCiphers = exports.getCiphers = getCiphers;
+  global.define = __define;
+  return module.exports;
+});
+
+$__System.registerDynamic("105", ["104"], true, function(require, exports, module) {
+  ;
+  var global = this,
+      __define = global.define;
+  global.define = undefined;
+  module.exports = require("104");
+  global.define = __define;
+  return module.exports;
+});
+
+$__System.registerDynamic("106", [], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -23994,17 +24689,17 @@ $__System.registerDynamic("f7", [], true, function(require, exports, module) {
   return module.exports;
 });
 
-$__System.registerDynamic("f8", ["f7"], true, function(require, exports, module) {
+$__System.registerDynamic("107", ["106"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("f7");
+  module.exports = require("106");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("f9", [], true, function(require, exports, module) {
+$__System.registerDynamic("108", [], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -24059,23 +24754,23 @@ $__System.registerDynamic("f9", [], true, function(require, exports, module) {
   return module.exports;
 });
 
-$__System.registerDynamic("fa", ["f9"], true, function(require, exports, module) {
+$__System.registerDynamic("109", ["108"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("f9");
+  module.exports = require("108");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("fb", ["f8", "fa"], true, function(require, exports, module) {
+$__System.registerDynamic("10a", ["107", "109"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  var bn = require("f8");
-  var brorand = require("fa");
+  var bn = require("107");
+  var brorand = require("109");
   function MillerRabin(rand) {
     this.rand = rand || new brorand.Rand();
   }
@@ -24160,17 +24855,17 @@ $__System.registerDynamic("fb", ["f8", "fa"], true, function(require, exports, m
   return module.exports;
 });
 
-$__System.registerDynamic("fc", ["fb"], true, function(require, exports, module) {
+$__System.registerDynamic("10b", ["10a"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("fb");
+  module.exports = require("10a");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("fd", ["cc", "f8", "fc"], true, function(require, exports, module) {
+$__System.registerDynamic("10c", ["cc", "107", "10b"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -24179,9 +24874,9 @@ $__System.registerDynamic("fd", ["cc", "f8", "fc"], true, function(require, expo
   module.exports = findPrime;
   findPrime.simpleSieve = simpleSieve;
   findPrime.fermatTest = fermatTest;
-  var BN = require("f8");
+  var BN = require("107");
   var TWENTYFOUR = new BN(24);
-  var MillerRabin = require("fc");
+  var MillerRabin = require("10b");
   var millerRabin = new MillerRabin();
   var ONE = new BN(1);
   var TWO = new BN(2);
@@ -24298,7 +24993,7 @@ $__System.registerDynamic("fd", ["cc", "f8", "fc"], true, function(require, expo
   return module.exports;
 });
 
-$__System.registerDynamic("fe", [], true, function(require, exports, module) {
+$__System.registerDynamic("10d", [], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -24341,21 +25036,21 @@ $__System.registerDynamic("fe", [], true, function(require, exports, module) {
   return module.exports;
 });
 
-$__System.registerDynamic("ff", ["f8", "fc", "fd", "cc", "72"], true, function(require, exports, module) {
+$__System.registerDynamic("10e", ["107", "10b", "10c", "cc", "72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   (function(Buffer) {
-    var BN = require("f8");
-    var MillerRabin = require("fc");
+    var BN = require("107");
+    var MillerRabin = require("10b");
     var millerRabin = new MillerRabin();
     var TWENTYFOUR = new BN(24);
     var ELEVEN = new BN(11);
     var TEN = new BN(10);
     var THREE = new BN(3);
     var SEVEN = new BN(7);
-    var primes = require("fd");
+    var primes = require("10c");
     var randomBytes = require("cc");
     module.exports = DH;
     function setPublicKey(pub, enc) {
@@ -24493,15 +25188,15 @@ $__System.registerDynamic("ff", ["f8", "fc", "fd", "cc", "72"], true, function(r
   return module.exports;
 });
 
-$__System.registerDynamic("100", ["fd", "fe", "ff", "72"], true, function(require, exports, module) {
+$__System.registerDynamic("10f", ["10c", "10d", "10e", "72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   (function(Buffer) {
-    var generatePrime = require("fd");
-    var primes = require("fe");
-    var DH = require("ff");
+    var generatePrime = require("10c");
+    var primes = require("10d");
+    var DH = require("10e");
     function getDiffieHellman(mod) {
       var prime = new Buffer(primes[mod].prime, 'hex');
       var gen = new Buffer(primes[mod].gen, 'hex');
@@ -24534,23 +25229,23 @@ $__System.registerDynamic("100", ["fd", "fe", "ff", "72"], true, function(requir
   return module.exports;
 });
 
-$__System.registerDynamic("101", ["100"], true, function(require, exports, module) {
+$__System.registerDynamic("110", ["10f"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("100");
+  module.exports = require("10f");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("102", ["f8", "cc", "72"], true, function(require, exports, module) {
+$__System.registerDynamic("111", ["107", "cc", "72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   (function(Buffer) {
-    var bn = require("f8");
+    var bn = require("107");
     var randomBytes = require("cc");
     module.exports = crt;
     function blind(priv) {
@@ -24600,17 +25295,17 @@ $__System.registerDynamic("102", ["f8", "cc", "72"], true, function(require, exp
   return module.exports;
 });
 
-$__System.registerDynamic("103", ["102"], true, function(require, exports, module) {
+$__System.registerDynamic("112", ["111"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("102");
+  module.exports = require("111");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("104", [], true, function(require, exports, module) {
+$__System.registerDynamic("113", [], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -24624,7 +25319,7 @@ $__System.registerDynamic("104", [], true, function(require, exports, module) {
   return module.exports;
 });
 
-$__System.registerDynamic("105", [], true, function(require, exports, module) {
+$__System.registerDynamic("114", [], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -24662,7 +25357,7 @@ $__System.registerDynamic("105", [], true, function(require, exports, module) {
   return module.exports;
 });
 
-$__System.registerDynamic("106", [], true, function(require, exports, module) {
+$__System.registerDynamic("115", [], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -24799,7 +25494,7 @@ $__System.registerDynamic("106", [], true, function(require, exports, module) {
   return module.exports;
 });
 
-$__System.registerDynamic("107", ["76"], true, function(require, exports, module) {
+$__System.registerDynamic("116", ["76"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -25043,12 +25738,12 @@ $__System.registerDynamic("107", ["76"], true, function(require, exports, module
   return module.exports;
 });
 
-$__System.registerDynamic("108", ["109"], true, function(require, exports, module) {
+$__System.registerDynamic("117", ["118"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  var hash = require("109");
+  var hash = require("118");
   var utils = hash.utils;
   var assert = utils.assert;
   function BlockHash() {
@@ -25125,12 +25820,12 @@ $__System.registerDynamic("108", ["109"], true, function(require, exports, modul
   return module.exports;
 });
 
-$__System.registerDynamic("10a", ["109"], true, function(require, exports, module) {
+$__System.registerDynamic("119", ["118"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  var hash = require("109");
+  var hash = require("118");
   var utils = hash.utils;
   var assert = utils.assert;
   var rotr32 = utils.rotr32;
@@ -25521,12 +26216,12 @@ $__System.registerDynamic("10a", ["109"], true, function(require, exports, modul
   return module.exports;
 });
 
-$__System.registerDynamic("10b", ["109"], true, function(require, exports, module) {
+$__System.registerDynamic("11a", ["118"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  var hash = require("109");
+  var hash = require("118");
   var utils = hash.utils;
   var rotl32 = utils.rotl32;
   var sum32 = utils.sum32;
@@ -25628,13 +26323,13 @@ $__System.registerDynamic("10b", ["109"], true, function(require, exports, modul
   return module.exports;
 });
 
-$__System.registerDynamic("10c", ["109"], true, function(require, exports, module) {
+$__System.registerDynamic("11b", ["118"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   var hmac = exports;
-  var hash = require("109");
+  var hash = require("118");
   var utils = hash.utils;
   var assert = utils.assert;
   function Hmac(hash, key, enc) {
@@ -25673,17 +26368,17 @@ $__System.registerDynamic("10c", ["109"], true, function(require, exports, modul
   return module.exports;
 });
 
-$__System.registerDynamic("109", ["107", "108", "10a", "10b", "10c"], true, function(require, exports, module) {
+$__System.registerDynamic("118", ["116", "117", "119", "11a", "11b"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   var hash = exports;
-  hash.utils = require("107");
-  hash.common = require("108");
-  hash.sha = require("10a");
-  hash.ripemd = require("10b");
-  hash.hmac = require("10c");
+  hash.utils = require("116");
+  hash.common = require("117");
+  hash.sha = require("119");
+  hash.ripemd = require("11a");
+  hash.hmac = require("11b");
   hash.sha1 = hash.sha.sha1;
   hash.sha256 = hash.sha.sha256;
   hash.sha224 = hash.sha.sha224;
@@ -25694,24 +26389,24 @@ $__System.registerDynamic("109", ["107", "108", "10a", "10b", "10c"], true, func
   return module.exports;
 });
 
-$__System.registerDynamic("10d", ["109"], true, function(require, exports, module) {
+$__System.registerDynamic("11c", ["118"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("109");
+  module.exports = require("118");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("10e", ["10d", "10f"], true, function(require, exports, module) {
+$__System.registerDynamic("11d", ["11c", "11e"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   'use strict';
-  var hash = require("10d");
-  var elliptic = require("10f");
+  var hash = require("11c");
+  var elliptic = require("11e");
   var utils = elliptic.utils;
   var assert = utils.assert;
   function HmacDRBG(options) {
@@ -25796,14 +26491,14 @@ $__System.registerDynamic("10e", ["10d", "10f"], true, function(require, exports
   return module.exports;
 });
 
-$__System.registerDynamic("110", ["f8", "10f"], true, function(require, exports, module) {
+$__System.registerDynamic("11f", ["107", "11e"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   'use strict';
-  var bn = require("f8");
-  var elliptic = require("10f");
+  var bn = require("107");
+  var elliptic = require("11e");
   var getNAF = elliptic.utils.getNAF;
   var getJSF = elliptic.utils.getJSF;
   var assert = elliptic.utils.assert;
@@ -26043,15 +26738,15 @@ $__System.registerDynamic("110", ["f8", "10f"], true, function(require, exports,
   return module.exports;
 });
 
-$__System.registerDynamic("111", ["112", "10f", "f8", "76"], true, function(require, exports, module) {
+$__System.registerDynamic("120", ["121", "11e", "107", "76"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   'use strict';
-  var curve = require("112");
-  var elliptic = require("10f");
-  var bn = require("f8");
+  var curve = require("121");
+  var elliptic = require("11e");
+  var bn = require("107");
   var inherits = require("76");
   var Base = curve.base;
   var assert = elliptic.utils.assert;
@@ -26722,14 +27417,14 @@ $__System.registerDynamic("111", ["112", "10f", "f8", "76"], true, function(requ
   return module.exports;
 });
 
-$__System.registerDynamic("113", ["112", "f8", "76"], true, function(require, exports, module) {
+$__System.registerDynamic("122", ["121", "107", "76"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   'use strict';
-  var curve = require("112");
-  var bn = require("f8");
+  var curve = require("121");
+  var bn = require("107");
   var inherits = require("76");
   var Base = curve.base;
   function MontCurve(conf) {
@@ -26840,15 +27535,15 @@ $__System.registerDynamic("113", ["112", "f8", "76"], true, function(require, ex
   return module.exports;
 });
 
-$__System.registerDynamic("114", ["112", "10f", "f8", "76"], true, function(require, exports, module) {
+$__System.registerDynamic("123", ["121", "11e", "107", "76"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   'use strict';
-  var curve = require("112");
-  var elliptic = require("10f");
-  var bn = require("f8");
+  var curve = require("121");
+  var elliptic = require("11e");
+  var bn = require("107");
   var inherits = require("76");
   var Base = curve.base;
   var assert = elliptic.utils.assert;
@@ -27091,22 +27786,22 @@ $__System.registerDynamic("114", ["112", "10f", "f8", "76"], true, function(requ
   return module.exports;
 });
 
-$__System.registerDynamic("112", ["110", "111", "113", "114"], true, function(require, exports, module) {
+$__System.registerDynamic("121", ["11f", "120", "122", "123"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   'use strict';
   var curve = exports;
-  curve.base = require("110");
-  curve.short = require("111");
-  curve.mont = require("113");
-  curve.edwards = require("114");
+  curve.base = require("11f");
+  curve.short = require("120");
+  curve.mont = require("122");
+  curve.edwards = require("123");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("115", [], true, function(require, exports, module) {
+$__System.registerDynamic("124", [], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -27125,15 +27820,15 @@ $__System.registerDynamic("115", [], true, function(require, exports, module) {
   return module.exports;
 });
 
-$__System.registerDynamic("116", ["10d", "10f", "115"], true, function(require, exports, module) {
+$__System.registerDynamic("125", ["11c", "11e", "124"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   'use strict';
   var curves = exports;
-  var hash = require("10d");
-  var elliptic = require("10f");
+  var hash = require("11c");
+  var elliptic = require("11e");
   var assert = elliptic.utils.assert;
   function PresetCurve(options) {
     if (options.type === 'short')
@@ -27222,7 +27917,7 @@ $__System.registerDynamic("116", ["10d", "10f", "115"], true, function(require, 
   });
   var pre;
   try {
-    pre = require("115");
+    pre = require("124");
   } catch (e) {
     pre = undefined;
   }
@@ -27251,14 +27946,14 @@ $__System.registerDynamic("116", ["10d", "10f", "115"], true, function(require, 
   return module.exports;
 });
 
-$__System.registerDynamic("117", ["f8", "10f"], true, function(require, exports, module) {
+$__System.registerDynamic("126", ["107", "11e"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   'use strict';
-  var bn = require("f8");
-  var elliptic = require("10f");
+  var bn = require("107");
+  var elliptic = require("11e");
   var utils = elliptic.utils;
   function KeyPair(ec, options) {
     this.ec = ec;
@@ -27384,14 +28079,14 @@ $__System.registerDynamic("117", ["f8", "10f"], true, function(require, exports,
   return module.exports;
 });
 
-$__System.registerDynamic("118", ["f8", "10f"], true, function(require, exports, module) {
+$__System.registerDynamic("127", ["107", "11e"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   'use strict';
-  var bn = require("f8");
-  var elliptic = require("10f");
+  var bn = require("107");
+  var elliptic = require("11e");
   var utils = elliptic.utils;
   var assert = utils.assert;
   function Signature(options, enc) {
@@ -27448,18 +28143,18 @@ $__System.registerDynamic("118", ["f8", "10f"], true, function(require, exports,
   return module.exports;
 });
 
-$__System.registerDynamic("119", ["f8", "10f", "117", "118"], true, function(require, exports, module) {
+$__System.registerDynamic("128", ["107", "11e", "126", "127"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   'use strict';
-  var bn = require("f8");
-  var elliptic = require("10f");
+  var bn = require("107");
+  var elliptic = require("11e");
   var utils = elliptic.utils;
   var assert = utils.assert;
-  var KeyPair = require("117");
-  var Signature = require("118");
+  var KeyPair = require("126");
+  var Signature = require("127");
   function EC(options) {
     if (!(this instanceof EC))
       return new EC(options);
@@ -27611,35 +28306,35 @@ $__System.registerDynamic("119", ["f8", "10f", "117", "118"], true, function(req
   return module.exports;
 });
 
-$__System.registerDynamic("10f", ["105", "106", "fa", "10e", "112", "116", "119"], true, function(require, exports, module) {
+$__System.registerDynamic("11e", ["114", "115", "109", "11d", "121", "125", "128"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   'use strict';
   var elliptic = exports;
-  elliptic.version = require("105").version;
-  elliptic.utils = require("106");
-  elliptic.rand = require("fa");
-  elliptic.hmacDRBG = require("10e");
-  elliptic.curve = require("112");
-  elliptic.curves = require("116");
-  elliptic.ec = require("119");
+  elliptic.version = require("114").version;
+  elliptic.utils = require("115");
+  elliptic.rand = require("109");
+  elliptic.hmacDRBG = require("11d");
+  elliptic.curve = require("121");
+  elliptic.curves = require("125");
+  elliptic.ec = require("128");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("11a", ["10f"], true, function(require, exports, module) {
+$__System.registerDynamic("129", ["11e"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("10f");
+  module.exports = require("11e");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("11b", [], true, function(require, exports, module) {
+$__System.registerDynamic("12a", [], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -27658,22 +28353,22 @@ $__System.registerDynamic("11b", [], true, function(require, exports, module) {
   return module.exports;
 });
 
-$__System.registerDynamic("11c", ["11b"], true, function(require, exports, module) {
+$__System.registerDynamic("12b", ["12a"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("11b");
+  module.exports = require("12a");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("11d", ["11c"], true, function(require, exports, module) {
+$__System.registerDynamic("12c", ["12b"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  var indexOf = require("11c");
+  var indexOf = require("12b");
   var Object_keys = function(obj) {
     if (Object.keys)
       return Object.keys(obj);
@@ -27789,42 +28484,42 @@ $__System.registerDynamic("11d", ["11c"], true, function(require, exports, modul
   return module.exports;
 });
 
-$__System.registerDynamic("11e", ["11d"], true, function(require, exports, module) {
+$__System.registerDynamic("12d", ["12c"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("11d");
+  module.exports = require("12c");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("11f", ["11e"], true, function(require, exports, module) {
+$__System.registerDynamic("12e", ["12d"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = $__System._nodeRequire ? $__System._nodeRequire('vm') : require("11e");
+  module.exports = $__System._nodeRequire ? $__System._nodeRequire('vm') : require("12d");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("120", ["11f"], true, function(require, exports, module) {
+$__System.registerDynamic("12f", ["12e"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("11f");
+  module.exports = require("12e");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("121", ["122", "76", "120"], true, function(require, exports, module) {
+$__System.registerDynamic("130", ["131", "76", "12f"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  var asn1 = require("122");
+  var asn1 = require("131");
   var inherits = require("76");
   var api = exports;
   api.define = function define(name, body) {
@@ -27840,7 +28535,7 @@ $__System.registerDynamic("121", ["122", "76", "120"], true, function(require, e
   Entity.prototype._createNamed = function createNamed(base) {
     var named;
     try {
-      named = require("120").runInThisContext('(function ' + this.name + '(entity) {\n' + '  this._initNamed(entity);\n' + '})');
+      named = require("12f").runInThisContext('(function ' + this.name + '(entity) {\n' + '  this._initNamed(entity);\n' + '})');
     } catch (e) {
       named = function(entity) {
         this._initNamed(entity);
@@ -27872,7 +28567,7 @@ $__System.registerDynamic("121", ["122", "76", "120"], true, function(require, e
   return module.exports;
 });
 
-$__System.registerDynamic("123", ["76"], true, function(require, exports, module) {
+$__System.registerDynamic("132", ["76"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -27964,14 +28659,14 @@ $__System.registerDynamic("123", ["76"], true, function(require, exports, module
   return module.exports;
 });
 
-$__System.registerDynamic("124", ["76", "125", "72"], true, function(require, exports, module) {
+$__System.registerDynamic("133", ["76", "134", "72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   (function(Buffer) {
     var inherits = require("76");
-    var Reporter = require("125").Reporter;
+    var Reporter = require("134").Reporter;
     var Buffer = require("72").Buffer;
     function DecoderBuffer(base, options) {
       Reporter.call(this, options);
@@ -28074,42 +28769,14 @@ $__System.registerDynamic("124", ["76", "125", "72"], true, function(require, ex
   return module.exports;
 });
 
-$__System.registerDynamic("126", [], true, function(require, exports, module) {
+$__System.registerDynamic("135", ["134", "fa"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = assert;
-  function assert(val, msg) {
-    if (!val)
-      throw new Error(msg || 'Assertion failed');
-  }
-  assert.equal = function assertEqual(l, r, msg) {
-    if (l != r)
-      throw new Error(msg || ('Assertion failed: ' + l + ' != ' + r));
-  };
-  global.define = __define;
-  return module.exports;
-});
-
-$__System.registerDynamic("127", ["126"], true, function(require, exports, module) {
-  ;
-  var global = this,
-      __define = global.define;
-  global.define = undefined;
-  module.exports = require("126");
-  global.define = __define;
-  return module.exports;
-});
-
-$__System.registerDynamic("128", ["125", "127"], true, function(require, exports, module) {
-  ;
-  var global = this,
-      __define = global.define;
-  global.define = undefined;
-  var Reporter = require("125").Reporter;
-  var EncoderBuffer = require("125").EncoderBuffer;
-  var assert = require("127");
+  var Reporter = require("134").Reporter;
+  var EncoderBuffer = require("134").EncoderBuffer;
+  var assert = require("fa");
   var tags = ['seq', 'seqof', 'set', 'setof', 'octstr', 'bitstr', 'objid', 'bool', 'gentime', 'utctime', 'null_', 'enum', 'int', 'ia5str', 'utf8str'];
   var methods = ['key', 'obj', 'use', 'optional', 'explicit', 'implicit', 'def', 'choice', 'any'].concat(tags);
   var overrided = ['_peekTag', '_decodeTag', '_use', '_decodeStr', '_decodeObjid', '_decodeTime', '_decodeNull', '_decodeInt', '_decodeBool', '_decodeList', '_encodeComposite', '_encodeStr', '_encodeObjid', '_encodeTime', '_encodeNull', '_encodeInt', '_encodeBool'];
@@ -28535,26 +29202,26 @@ $__System.registerDynamic("128", ["125", "127"], true, function(require, exports
   return module.exports;
 });
 
-$__System.registerDynamic("125", ["123", "124", "128"], true, function(require, exports, module) {
+$__System.registerDynamic("134", ["132", "133", "135"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   var base = exports;
-  base.Reporter = require("123").Reporter;
-  base.DecoderBuffer = require("124").DecoderBuffer;
-  base.EncoderBuffer = require("124").EncoderBuffer;
-  base.Node = require("128");
+  base.Reporter = require("132").Reporter;
+  base.DecoderBuffer = require("133").DecoderBuffer;
+  base.EncoderBuffer = require("133").EncoderBuffer;
+  base.Node = require("135");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("129", ["12a"], true, function(require, exports, module) {
+$__System.registerDynamic("136", ["137"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  var constants = require("12a");
+  var constants = require("137");
   exports.tagClass = {
     0: 'universal',
     1: 'application',
@@ -28598,7 +29265,7 @@ $__System.registerDynamic("129", ["12a"], true, function(require, exports, modul
   return module.exports;
 });
 
-$__System.registerDynamic("12a", ["129"], true, function(require, exports, module) {
+$__System.registerDynamic("137", ["136"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -28614,18 +29281,18 @@ $__System.registerDynamic("12a", ["129"], true, function(require, exports, modul
     });
     return res;
   };
-  constants.der = require("129");
+  constants.der = require("136");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("12b", ["76", "122"], true, function(require, exports, module) {
+$__System.registerDynamic("138", ["76", "131"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   var inherits = require("76");
-  var asn1 = require("122");
+  var asn1 = require("131");
   var base = asn1.base;
   var bignum = asn1.bignum;
   var der = asn1.constants.der;
@@ -28850,7 +29517,7 @@ $__System.registerDynamic("12b", ["76", "122"], true, function(require, exports,
   return module.exports;
 });
 
-$__System.registerDynamic("12c", ["76", "72", "122", "12b"], true, function(require, exports, module) {
+$__System.registerDynamic("139", ["76", "72", "131", "138"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -28858,8 +29525,8 @@ $__System.registerDynamic("12c", ["76", "72", "122", "12b"], true, function(requ
   (function(Buffer) {
     var inherits = require("76");
     var Buffer = require("72").Buffer;
-    var asn1 = require("122");
-    var DERDecoder = require("12b");
+    var asn1 = require("131");
+    var DERDecoder = require("138");
     function PEMDecoder(entity) {
       DERDecoder.call(this, entity);
       this.enc = 'pem';
@@ -28902,19 +29569,19 @@ $__System.registerDynamic("12c", ["76", "72", "122", "12b"], true, function(requ
   return module.exports;
 });
 
-$__System.registerDynamic("12d", ["12b", "12c"], true, function(require, exports, module) {
+$__System.registerDynamic("13a", ["138", "139"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   var decoders = exports;
-  decoders.der = require("12b");
-  decoders.pem = require("12c");
+  decoders.der = require("138");
+  decoders.pem = require("139");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("12e", ["76", "72", "122"], true, function(require, exports, module) {
+$__System.registerDynamic("13b", ["76", "72", "131"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -28922,7 +29589,7 @@ $__System.registerDynamic("12e", ["76", "72", "122"], true, function(require, ex
   (function(Buffer) {
     var inherits = require("76");
     var Buffer = require("72").Buffer;
-    var asn1 = require("122");
+    var asn1 = require("131");
     var base = asn1.base;
     var bignum = asn1.bignum;
     var der = asn1.constants.der;
@@ -29119,7 +29786,7 @@ $__System.registerDynamic("12e", ["76", "72", "122"], true, function(require, ex
   return module.exports;
 });
 
-$__System.registerDynamic("12f", ["76", "72", "122", "12e"], true, function(require, exports, module) {
+$__System.registerDynamic("13c", ["76", "72", "131", "13b"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -29127,8 +29794,8 @@ $__System.registerDynamic("12f", ["76", "72", "122", "12e"], true, function(requ
   (function(Buffer) {
     var inherits = require("76");
     var Buffer = require("72").Buffer;
-    var asn1 = require("122");
-    var DEREncoder = require("12e");
+    var asn1 = require("131");
+    var DEREncoder = require("13b");
     function PEMEncoder(entity) {
       DEREncoder.call(this, entity);
       this.enc = 'pem';
@@ -29150,50 +29817,50 @@ $__System.registerDynamic("12f", ["76", "72", "122", "12e"], true, function(requ
   return module.exports;
 });
 
-$__System.registerDynamic("130", ["12e", "12f"], true, function(require, exports, module) {
+$__System.registerDynamic("13d", ["13b", "13c"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   var encoders = exports;
-  encoders.der = require("12e");
-  encoders.pem = require("12f");
+  encoders.der = require("13b");
+  encoders.pem = require("13c");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("122", ["f8", "121", "125", "12a", "12d", "130"], true, function(require, exports, module) {
+$__System.registerDynamic("131", ["107", "130", "134", "137", "13a", "13d"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   var asn1 = exports;
-  asn1.bignum = require("f8");
-  asn1.define = require("121").define;
-  asn1.base = require("125");
-  asn1.constants = require("12a");
-  asn1.decoders = require("12d");
-  asn1.encoders = require("130");
+  asn1.bignum = require("107");
+  asn1.define = require("130").define;
+  asn1.base = require("134");
+  asn1.constants = require("137");
+  asn1.decoders = require("13a");
+  asn1.encoders = require("13d");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("131", ["122"], true, function(require, exports, module) {
+$__System.registerDynamic("13e", ["131"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("122");
+  module.exports = require("131");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("132", ["131"], true, function(require, exports, module) {
+$__System.registerDynamic("13f", ["13e"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  var asn1 = require("131");
+  var asn1 = require("13e");
   var RSAPrivateKey = asn1.define('RSAPrivateKey', function() {
     this.seq().obj(this.key('version').int(), this.key('modulus').int(), this.key('publicExponent').int(), this.key('privateExponent').int(), this.key('prime1').int(), this.key('prime2').int(), this.key('exponent1').int(), this.key('exponent2').int(), this.key('coefficient').int());
   });
@@ -29238,7 +29905,7 @@ $__System.registerDynamic("132", ["131"], true, function(require, exports, modul
   return module.exports;
 });
 
-$__System.registerDynamic("133", [], true, function(require, exports, module) {
+$__System.registerDynamic("140", [], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -29261,58 +29928,17 @@ $__System.registerDynamic("133", [], true, function(require, exports, module) {
   return module.exports;
 });
 
-$__System.registerDynamic("134", ["db", "72"], true, function(require, exports, module) {
+$__System.registerDynamic("141", ["f7"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  (function(Buffer) {
-    var createHash = require("db");
-    module.exports = function evp(password, salt, keyLen) {
-      keyLen = keyLen / 8;
-      var ki = 0;
-      var ii = 0;
-      var key = new Buffer(keyLen);
-      var addmd = 0;
-      var md,
-          md_buf;
-      var i;
-      while (true) {
-        md = createHash('md5');
-        if (addmd++ > 0) {
-          md.update(md_buf);
-        }
-        md.update(password);
-        md.update(salt);
-        md_buf = md.digest();
-        i = 0;
-        if (keyLen > 0) {
-          while (true) {
-            if (keyLen === 0) {
-              break;
-            }
-            if (i === md_buf.length) {
-              break;
-            }
-            key[ki++] = md_buf[i++];
-            keyLen--;
-          }
-        }
-        if (keyLen === 0) {
-          break;
-        }
-      }
-      for (i = 0; i < md_buf.length; i++) {
-        md_buf[i] = 0;
-      }
-      return key;
-    };
-  })(require("72").Buffer);
+  module.exports = require("f7");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("135", ["134", "f6", "72"], true, function(require, exports, module) {
+$__System.registerDynamic("142", ["e6", "141", "72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -29321,8 +29947,8 @@ $__System.registerDynamic("135", ["134", "f6", "72"], true, function(require, ex
     var findProc = /Proc-Type: 4,ENCRYPTED\r?\nDEK-Info: AES-((?:128)|(?:192)|(?:256))-CBC,([0-9A-H]+)\r?\n\r?\n([0-9A-z\n\r\+\/\=]+)\r?\n/m;
     var startRegex = /^-----BEGIN (.*) KEY-----\r?\n/m;
     var fullRegex = /^-----BEGIN (.*) KEY-----\r?\n([0-9A-z\n\r\+\/\=]+)\r?\n-----END \1 KEY-----$/m;
-    var evp = require("134");
-    var ciphers = require("f6");
+    var evp = require("e6");
+    var ciphers = require("141");
     module.exports = function(okey, password) {
       var key = okey.toString();
       var match = key.match(findProc);
@@ -29334,7 +29960,7 @@ $__System.registerDynamic("135", ["134", "f6", "72"], true, function(require, ex
         var suite = 'aes' + match[1];
         var iv = new Buffer(match[2], 'hex');
         var cipherText = new Buffer(match[3].replace(/\r?\n/g, ''), 'base64');
-        var cipherKey = evp(password, iv.slice(0, 8), parseInt(match[1]));
+        var cipherKey = evp(password, iv.slice(0, 8), parseInt(match[1], 10)).key;
         var out = [];
         var cipher = ciphers.createDecipheriv(suite, cipherKey, iv);
         out.push(cipher.update(cipherText));
@@ -29347,29 +29973,22 @@ $__System.registerDynamic("135", ["134", "f6", "72"], true, function(require, ex
         data: decrypted
       };
     };
-    function wrap(str) {
-      var chunks = [];
-      for (var i = 0; i < str.length; i += 64) {
-        chunks.push(str.slice(i, i + 64));
-      }
-      return chunks.join("\n");
-    }
   })(require("72").Buffer);
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("136", ["132", "133", "135", "f6", "e0", "72"], true, function(require, exports, module) {
+$__System.registerDynamic("143", ["13f", "140", "142", "141", "e4", "72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   (function(Buffer) {
-    var asn1 = require("132");
-    var aesid = require("133");
-    var fixProc = require("135");
-    var ciphers = require("f6");
-    var compat = require("e0");
+    var asn1 = require("13f");
+    var aesid = require("140");
+    var fixProc = require("142");
+    var ciphers = require("141");
+    var compat = require("e4");
     module.exports = parseKeys;
     function parseKeys(buffer) {
       var password;
@@ -29471,28 +30090,28 @@ $__System.registerDynamic("136", ["132", "133", "135", "f6", "e0", "72"], true, 
   return module.exports;
 });
 
-$__System.registerDynamic("137", ["136"], true, function(require, exports, module) {
+$__System.registerDynamic("144", ["143"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("136");
+  module.exports = require("143");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("138", ["dd", "103", "104", "11a", "137", "f8", "72"], true, function(require, exports, module) {
+$__System.registerDynamic("145", ["e1", "112", "113", "129", "144", "107", "72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   (function(Buffer) {
-    var createHmac = require("dd");
-    var crt = require("103");
-    var curves = require("104");
-    var elliptic = require("11a");
-    var parseKeys = require("137");
-    var BN = require("f8");
+    var createHmac = require("e1");
+    var crt = require("112");
+    var curves = require("113");
+    var elliptic = require("129");
+    var parseKeys = require("144");
+    var BN = require("107");
     var EC = elliptic.ec;
     function sign(hash, key, hashType, signType) {
       var priv = parseKeys(key);
@@ -29634,16 +30253,16 @@ $__System.registerDynamic("138", ["dd", "103", "104", "11a", "137", "f8", "72"],
   return module.exports;
 });
 
-$__System.registerDynamic("139", ["104", "11a", "137", "f8", "72"], true, function(require, exports, module) {
+$__System.registerDynamic("146", ["113", "129", "144", "107", "72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   (function(Buffer) {
-    var curves = require("104");
-    var elliptic = require("11a");
-    var parseKeys = require("137");
-    var BN = require("f8");
+    var curves = require("113");
+    var elliptic = require("129");
+    var parseKeys = require("144");
+    var BN = require("107");
     var EC = elliptic.ec;
     function verify(sig, hash, key, signType) {
       var pub = parseKeys(key);
@@ -29730,18 +30349,18 @@ $__System.registerDynamic("139", ["104", "11a", "137", "f8", "72"], true, functi
   return module.exports;
 });
 
-$__System.registerDynamic("13a", ["de", "db", "76", "138", "8a", "139", "72"], true, function(require, exports, module) {
+$__System.registerDynamic("147", ["e2", "df", "76", "145", "8a", "146", "72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   (function(Buffer) {
-    var _algos = require("de");
-    var createHash = require("db");
+    var _algos = require("e2");
+    var createHash = require("df");
     var inherits = require("76");
-    var sign = require("138");
+    var sign = require("145");
     var stream = require("8a");
-    var verify = require("139");
+    var verify = require("146");
     var algos = {};
     Object.keys(_algos).forEach(function(key) {
       algos[key] = algos[key.toLowerCase()] = _algos[key];
@@ -29822,24 +30441,24 @@ $__System.registerDynamic("13a", ["de", "db", "76", "138", "8a", "139", "72"], t
   return module.exports;
 });
 
-$__System.registerDynamic("13b", ["13a"], true, function(require, exports, module) {
+$__System.registerDynamic("148", ["147"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("13a");
+  module.exports = require("147");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("13c", ["11a", "f8", "72"], true, function(require, exports, module) {
+$__System.registerDynamic("149", ["129", "107", "72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   (function(Buffer) {
-    var elliptic = require("11a");
-    var BN = require("f8");
+    var elliptic = require("129");
+    var BN = require("107");
     module.exports = function createECDH(curve) {
       return new ECDH(curve);
     };
@@ -29942,34 +30561,34 @@ $__System.registerDynamic("13c", ["11a", "f8", "72"], true, function(require, ex
   return module.exports;
 });
 
-$__System.registerDynamic("13d", ["13e", "13c"], true, function(require, exports, module) {
+$__System.registerDynamic("14a", ["14b", "149"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  var createECDH = require("13e").createECDH;
-  module.exports = createECDH || require("13c");
+  var createECDH = require("14b").createECDH;
+  module.exports = createECDH || require("149");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("13f", ["13d"], true, function(require, exports, module) {
+$__System.registerDynamic("14c", ["14a"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("13d");
+  module.exports = require("14a");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("140", ["db", "72"], true, function(require, exports, module) {
+$__System.registerDynamic("14d", ["df", "72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   (function(Buffer) {
-    var createHash = require("db");
+    var createHash = require("df");
     module.exports = function(seed, len) {
       var t = new Buffer('');
       var i = 0,
@@ -29990,7 +30609,7 @@ $__System.registerDynamic("140", ["db", "72"], true, function(require, exports, 
   return module.exports;
 });
 
-$__System.registerDynamic("141", [], true, function(require, exports, module) {
+$__System.registerDynamic("14e", [], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -30007,13 +30626,13 @@ $__System.registerDynamic("141", [], true, function(require, exports, module) {
   return module.exports;
 });
 
-$__System.registerDynamic("142", ["f8", "72"], true, function(require, exports, module) {
+$__System.registerDynamic("14f", ["107", "72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   (function(Buffer) {
-    var bn = require("f8");
+    var bn = require("107");
     function withPublic(paddedMsg, key) {
       return new Buffer(paddedMsg.toRed(bn.mont(key.modulus)).redPow(new bn(key.publicExponent)).fromRed().toArray());
     }
@@ -30023,20 +30642,20 @@ $__System.registerDynamic("142", ["f8", "72"], true, function(require, exports, 
   return module.exports;
 });
 
-$__System.registerDynamic("143", ["137", "cc", "db", "140", "141", "f8", "142", "103", "72"], true, function(require, exports, module) {
+$__System.registerDynamic("150", ["144", "cc", "df", "14d", "14e", "107", "14f", "112", "72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   (function(Buffer) {
-    var parseKeys = require("137");
+    var parseKeys = require("144");
     var randomBytes = require("cc");
-    var createHash = require("db");
-    var mgf = require("140");
-    var xor = require("141");
-    var bn = require("f8");
-    var withPublic = require("142");
-    var crt = require("103");
+    var createHash = require("df");
+    var mgf = require("14d");
+    var xor = require("14e");
+    var bn = require("107");
+    var withPublic = require("14f");
+    var crt = require("112");
     var constants = {
       RSA_PKCS1_OAEP_PADDING: 4,
       RSA_PKCS1_PADDIN: 1,
@@ -30126,19 +30745,19 @@ $__System.registerDynamic("143", ["137", "cc", "db", "140", "141", "f8", "142", 
   return module.exports;
 });
 
-$__System.registerDynamic("144", ["137", "140", "141", "f8", "103", "db", "142", "72"], true, function(require, exports, module) {
+$__System.registerDynamic("151", ["144", "14d", "14e", "107", "112", "df", "14f", "72"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   (function(Buffer) {
-    var parseKeys = require("137");
-    var mgf = require("140");
-    var xor = require("141");
-    var bn = require("f8");
-    var crt = require("103");
-    var createHash = require("db");
-    var withPublic = require("142");
+    var parseKeys = require("144");
+    var mgf = require("14d");
+    var xor = require("14e");
+    var bn = require("107");
+    var crt = require("112");
+    var createHash = require("df");
+    var withPublic = require("14f");
     module.exports = function privateDecrypt(private_key, enc, reverse) {
       var padding;
       if (private_key.padding) {
@@ -30241,13 +30860,13 @@ $__System.registerDynamic("144", ["137", "140", "141", "f8", "103", "db", "142",
   return module.exports;
 });
 
-$__System.registerDynamic("145", ["143", "144"], true, function(require, exports, module) {
+$__System.registerDynamic("152", ["150", "151"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  exports.publicEncrypt = require("143");
-  exports.privateDecrypt = require("144");
+  exports.publicEncrypt = require("150");
+  exports.privateDecrypt = require("151");
   exports.privateEncrypt = function privateEncrypt(key, buf) {
     return exports.publicEncrypt(key, buf, true);
   };
@@ -30258,46 +30877,50 @@ $__System.registerDynamic("145", ["143", "144"], true, function(require, exports
   return module.exports;
 });
 
-$__System.registerDynamic("146", ["145"], true, function(require, exports, module) {
+$__System.registerDynamic("153", ["152"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("145");
+  module.exports = require("152");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("147", ["cc", "db", "dd", "de", "e0", "f6", "101", "13b", "13f", "146"], true, function(require, exports, module) {
+$__System.registerDynamic("154", ["cc", "df", "e1", "e2", "e4", "105", "110", "148", "14c", "153"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   'use strict';
   exports.randomBytes = exports.rng = exports.pseudoRandomBytes = exports.prng = require("cc");
-  exports.createHash = exports.Hash = require("db");
-  exports.createHmac = exports.Hmac = require("dd");
-  var hashes = ['sha1', 'sha224', 'sha256', 'sha384', 'sha512', 'md5', 'rmd160'].concat(Object.keys(require("de")));
+  exports.createHash = exports.Hash = require("df");
+  exports.createHmac = exports.Hmac = require("e1");
+  var hashes = ['sha1', 'sha224', 'sha256', 'sha384', 'sha512', 'md5', 'rmd160'].concat(Object.keys(require("e2")));
   exports.getHashes = function() {
     return hashes;
   };
-  var p = require("e0");
+  var p = require("e4");
   exports.pbkdf2 = p.pbkdf2;
   exports.pbkdf2Sync = p.pbkdf2Sync;
-  var aes = require("f6");
+  var aes = require("105");
+  ;
   ['Cipher', 'createCipher', 'Cipheriv', 'createCipheriv', 'Decipher', 'createDecipher', 'Decipheriv', 'createDecipheriv', 'getCiphers', 'listCiphers'].forEach(function(key) {
     exports[key] = aes[key];
   });
-  var dh = require("101");
+  var dh = require("110");
+  ;
   ['DiffieHellmanGroup', 'createDiffieHellmanGroup', 'getDiffieHellman', 'createDiffieHellman', 'DiffieHellman'].forEach(function(key) {
     exports[key] = dh[key];
   });
-  var sign = require("13b");
+  var sign = require("148");
+  ;
   ['createSign', 'Sign', 'createVerify', 'Verify'].forEach(function(key) {
     exports[key] = sign[key];
   });
-  exports.createECDH = require("13f");
-  var publicEncrypt = require("146");
+  exports.createECDH = require("14c");
+  var publicEncrypt = require("153");
+  ;
   ['publicEncrypt', 'privateEncrypt', 'publicDecrypt', 'privateDecrypt'].forEach(function(key) {
     exports[key] = publicEncrypt[key];
   });
@@ -30311,42 +30934,42 @@ $__System.registerDynamic("147", ["cc", "db", "dd", "de", "e0", "f6", "101", "13
   return module.exports;
 });
 
-$__System.registerDynamic("148", ["147"], true, function(require, exports, module) {
+$__System.registerDynamic("155", ["154"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("147");
+  module.exports = require("154");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("149", ["148"], true, function(require, exports, module) {
+$__System.registerDynamic("156", ["155"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = $__System._nodeRequire ? $__System._nodeRequire('crypto') : require("148");
+  module.exports = $__System._nodeRequire ? $__System._nodeRequire('crypto') : require("155");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("13e", ["149"], true, function(require, exports, module) {
+$__System.registerDynamic("14b", ["156"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("149");
+  module.exports = require("156");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("14a", ["13e", "@empty"], true, function(require, exports, module) {
+$__System.registerDynamic("157", ["14b", "@empty"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  var crypto = require("13e");
+  var crypto = require("14b");
   function Keygrip(keys, algorithm, encoding) {
     if (!algorithm)
       algorithm = "sha1";
@@ -30406,17 +31029,17 @@ $__System.registerDynamic("14a", ["13e", "@empty"], true, function(require, expo
   return module.exports;
 });
 
-$__System.registerDynamic("14b", ["14a"], true, function(require, exports, module) {
+$__System.registerDynamic("158", ["157"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("14a");
+  module.exports = require("157");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("14c", ["a3"], true, function(require, exports, module) {
+$__System.registerDynamic("159", ["a3"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -30426,23 +31049,23 @@ $__System.registerDynamic("14c", ["a3"], true, function(require, exports, module
   return module.exports;
 });
 
-$__System.registerDynamic("14d", ["14c"], true, function(require, exports, module) {
+$__System.registerDynamic("15a", ["159"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("14c");
+  module.exports = require("159");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("14e", ["8a", "14d"], true, function(require, exports, module) {
+$__System.registerDynamic("15b", ["8a", "15a"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   var Stream = require("8a");
-  var util = require("14d");
+  var util = require("15a");
   var Response = module.exports = function(res) {
     this.offset = 0;
     this.readable = true;
@@ -30545,7 +31168,7 @@ $__System.registerDynamic("14e", ["8a", "14d"], true, function(require, exports,
   return module.exports;
 });
 
-$__System.registerDynamic("14f", [], true, function(require, exports, module) {
+$__System.registerDynamic("15c", [], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -30593,24 +31216,24 @@ $__System.registerDynamic("14f", [], true, function(require, exports, module) {
   return module.exports;
 });
 
-$__System.registerDynamic("150", ["14f"], true, function(require, exports, module) {
+$__System.registerDynamic("15d", ["15c"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("14f");
+  module.exports = require("15c");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("151", ["8a", "14e", "150", "76"], true, function(require, exports, module) {
+$__System.registerDynamic("15e", ["8a", "15b", "15d", "76"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   var Stream = require("8a");
-  var Response = require("14e");
-  var Base64 = require("150");
+  var Response = require("15b");
+  var Base64 = require("15d");
   var inherits = require("76");
   var Request = module.exports = function(xhr, params) {
     var self = this;
@@ -30765,7 +31388,7 @@ $__System.registerDynamic("151", ["8a", "14e", "150", "76"], true, function(requ
   return module.exports;
 });
 
-$__System.registerDynamic("152", ["57", "151", "c3"], true, function(require, exports, module) {
+$__System.registerDynamic("15f", ["57", "15e", "c3"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -30775,7 +31398,7 @@ $__System.registerDynamic("152", ["57", "151", "c3"], true, function(require, ex
   } else {
     var http = module.exports;
     var EventEmitter = require("57").EventEmitter;
-    var Request = require("151");
+    var Request = require("15e");
     var url = require("c3");
     http.request = function(params, cb) {
       if (typeof params === 'string') {
@@ -30909,23 +31532,23 @@ $__System.registerDynamic("152", ["57", "151", "c3"], true, function(require, ex
   return module.exports;
 });
 
-$__System.registerDynamic("153", ["152"], true, function(require, exports, module) {
+$__System.registerDynamic("160", ["15f"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("152");
+  module.exports = require("15f");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("154", ["14b", "153"], true, function(require, exports, module) {
+$__System.registerDynamic("161", ["158", "160"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  var Keygrip = require("14b");
-  var http = require("153");
+  var Keygrip = require("158");
+  var http = require("160");
   var cache = {};
   var fieldContentRegExp = /^[\u0009\u0020-\u007e\u0080-\u00ff]+$/;
   function Cookies(request, response, keys) {
@@ -31089,17 +31712,17 @@ $__System.registerDynamic("154", ["14b", "153"], true, function(require, exports
   return module.exports;
 });
 
-$__System.registerDynamic("155", ["154"], true, function(require, exports, module) {
+$__System.registerDynamic("162", ["161"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("154");
+  module.exports = require("161");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("156", [], true, function(require, exports, module) {
+$__System.registerDynamic("163", [], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -31192,7 +31815,7 @@ $__System.registerDynamic("156", [], true, function(require, exports, module) {
   return module.exports;
 });
 
-$__System.registerDynamic("157", [], true, function(require, exports, module) {
+$__System.registerDynamic("164", [], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -31297,7 +31920,7 @@ $__System.registerDynamic("157", [], true, function(require, exports, module) {
   return module.exports;
 });
 
-$__System.registerDynamic("158", [], true, function(require, exports, module) {
+$__System.registerDynamic("165", [], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -31402,7 +32025,7 @@ $__System.registerDynamic("158", [], true, function(require, exports, module) {
   return module.exports;
 });
 
-$__System.registerDynamic("159", [], true, function(require, exports, module) {
+$__System.registerDynamic("166", [], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -31547,15 +32170,15 @@ $__System.registerDynamic("159", [], true, function(require, exports, module) {
   return module.exports;
 });
 
-$__System.registerDynamic("15a", ["156", "157", "158", "159"], true, function(require, exports, module) {
+$__System.registerDynamic("167", ["163", "164", "165", "166"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  var preferredCharsets = require("156");
-  var preferredEncodings = require("157");
-  var preferredLanguages = require("158");
-  var preferredMediaTypes = require("159");
+  var preferredCharsets = require("163");
+  var preferredEncodings = require("164");
+  var preferredLanguages = require("165");
+  var preferredMediaTypes = require("166");
   module.exports = Negotiator;
   Negotiator.Negotiator = Negotiator;
   function Negotiator(request) {
@@ -31604,23 +32227,23 @@ $__System.registerDynamic("15a", ["156", "157", "158", "159"], true, function(re
   return module.exports;
 });
 
-$__System.registerDynamic("15b", ["15a"], true, function(require, exports, module) {
+$__System.registerDynamic("168", ["167"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("15a");
+  module.exports = require("167");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("15c", ["15b", "91"], true, function(require, exports, module) {
+$__System.registerDynamic("169", ["168", "91"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   'use strict';
-  var Negotiator = require("15b");
+  var Negotiator = require("168");
   var mime = require("91");
   module.exports = Accepts;
   function Accepts(req) {
@@ -31698,17 +32321,17 @@ $__System.registerDynamic("15c", ["15b", "91"], true, function(require, exports,
   return module.exports;
 });
 
-$__System.registerDynamic("15d", ["15c"], true, function(require, exports, module) {
+$__System.registerDynamic("16a", ["169"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("15c");
+  module.exports = require("169");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("15e", [], true, function(require, exports, module) {
+$__System.registerDynamic("16b", [], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -31728,17 +32351,17 @@ $__System.registerDynamic("15e", [], true, function(require, exports, module) {
   return module.exports;
 });
 
-$__System.registerDynamic("15f", ["15e"], true, function(require, exports, module) {
+$__System.registerDynamic("16c", ["16b"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("15e");
+  module.exports = require("16b");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("160", ["53", "57", "60", "64", "aa", "ac", "93", "b7", "ca", "9c", "155", "15d", "a7", "8a", "153", "15f", "5e", "72", "3f"], true, function(require, exports, module) {
+$__System.registerDynamic("16d", ["53", "57", "60", "64", "aa", "ac", "93", "b7", "ca", "9c", "162", "16a", "a7", "8a", "160", "16c", "5e", "72", "3f"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -31754,12 +32377,12 @@ $__System.registerDynamic("160", ["53", "57", "60", "64", "aa", "ac", "93", "b7"
     var context = require("b7");
     var request = require("ca");
     var statuses = require("9c");
-    var Cookies = require("155");
-    var accepts = require("15d");
+    var Cookies = require("162");
+    var accepts = require("16a");
     var assert = require("a7");
     var Stream = require("8a");
-    var http = require("153");
-    var only = require("15f");
+    var http = require("160");
+    var only = require("16c");
     var co = require("5e");
     var app = Application.prototype;
     exports = module.exports = Application;
@@ -31870,17 +32493,17 @@ $__System.registerDynamic("160", ["53", "57", "60", "64", "aa", "ac", "93", "b7"
   return module.exports;
 });
 
-$__System.registerDynamic("161", ["160"], true, function(require, exports, module) {
+$__System.registerDynamic("16e", ["16d"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("160");
+  module.exports = require("16d");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("162", ["@empty"], true, function(require, exports, module) {
+$__System.registerDynamic("16f", ["@empty"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -31897,17 +32520,17 @@ $__System.registerDynamic("162", ["@empty"], true, function(require, exports, mo
   return module.exports;
 });
 
-$__System.registerDynamic("163", ["162"], true, function(require, exports, module) {
+$__System.registerDynamic("170", ["16f"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("162");
+  module.exports = require("16f");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("164", ["78"], true, function(require, exports, module) {
+$__System.registerDynamic("171", ["78"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -32129,24 +32752,24 @@ $__System.registerDynamic("164", ["78"], true, function(require, exports, module
   return module.exports;
 });
 
-$__System.registerDynamic("165", ["164"], true, function(require, exports, module) {
+$__System.registerDynamic("172", ["171"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("164");
+  module.exports = require("171");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("166", ["ac", "53", "165"], true, function(require, exports, module) {
+$__System.registerDynamic("173", ["ac", "53", "172"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   var compose = require("ac");
   var debug = require("53")('koa-router');
-  var pathToRegExp = require("165");
+  var pathToRegExp = require("172");
   module.exports = Layer;
   function Layer(path, methods, middleware, opts) {
     this.opts = opts || {};
@@ -32254,7 +32877,7 @@ $__System.registerDynamic("166", ["ac", "53", "165"], true, function(require, ex
   return module.exports;
 });
 
-$__System.registerDynamic("167", ["ac", "53", "ae", "163", "166"], true, function(require, exports, module) {
+$__System.registerDynamic("174", ["ac", "53", "ae", "170", "173"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -32262,8 +32885,8 @@ $__System.registerDynamic("167", ["ac", "53", "ae", "163", "166"], true, functio
   var compose = require("ac");
   var debug = require("53")('koa-router');
   var HttpError = require("ae");
-  var methods = require("163");
-  var Layer = require("166");
+  var methods = require("170");
+  var Layer = require("173");
   module.exports = Router;
   function Router(opts) {
     if (!(this instanceof Router)) {
@@ -32483,22 +33106,22 @@ $__System.registerDynamic("167", ["ac", "53", "ae", "163", "166"], true, functio
   return module.exports;
 });
 
-$__System.registerDynamic("168", ["167"], true, function(require, exports, module) {
+$__System.registerDynamic("175", ["174"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("167");
+  module.exports = require("174");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("169", ["14d", "8a"], true, function(require, exports, module) {
+$__System.registerDynamic("176", ["15a", "8a"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  var util = require("14d");
+  var util = require("15a");
   var Transform = require("8a").Transform;
   util.inherits(Counter, Transform);
   module.exports = Counter;
@@ -32517,17 +33140,17 @@ $__System.registerDynamic("169", ["14d", "8a"], true, function(require, exports,
   return module.exports;
 });
 
-$__System.registerDynamic("16a", ["169"], true, function(require, exports, module) {
+$__System.registerDynamic("177", ["176"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("169");
+  module.exports = require("176");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("16b", [], true, function(require, exports, module) {
+$__System.registerDynamic("178", [], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -32544,17 +33167,17 @@ $__System.registerDynamic("16b", [], true, function(require, exports, module) {
   return module.exports;
 });
 
-$__System.registerDynamic("16c", ["16b"], true, function(require, exports, module) {
+$__System.registerDynamic("179", ["178"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("16b");
+  module.exports = require("178");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("16d", [], true, function(require, exports, module) {
+$__System.registerDynamic("17a", [], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -32593,17 +33216,17 @@ $__System.registerDynamic("16d", [], true, function(require, exports, module) {
   return module.exports;
 });
 
-$__System.registerDynamic("16e", ["16d"], true, function(require, exports, module) {
+$__System.registerDynamic("17b", ["17a"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("16d");
+  module.exports = require("17a");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("16f", [], true, function(require, exports, module) {
+$__System.registerDynamic("17c", [], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -32620,17 +33243,17 @@ $__System.registerDynamic("16f", [], true, function(require, exports, module) {
   return module.exports;
 });
 
-$__System.registerDynamic("170", ["16f"], true, function(require, exports, module) {
+$__System.registerDynamic("17d", ["17c"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("16f");
+  module.exports = require("17c");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("171", [], true, function(require, exports, module) {
+$__System.registerDynamic("17e", [], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -32696,17 +33319,17 @@ $__System.registerDynamic("171", [], true, function(require, exports, module) {
   return module.exports;
 });
 
-$__System.registerDynamic("172", ["171"], true, function(require, exports, module) {
+$__System.registerDynamic("17f", ["17e"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("171");
+  module.exports = require("17e");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("173", [], true, function(require, exports, module) {
+$__System.registerDynamic("180", [], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -32719,23 +33342,23 @@ $__System.registerDynamic("173", [], true, function(require, exports, module) {
   return module.exports;
 });
 
-$__System.registerDynamic("174", ["173"], true, function(require, exports, module) {
+$__System.registerDynamic("181", ["180"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("173");
+  module.exports = require("180");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("175", ["174"], true, function(require, exports, module) {
+$__System.registerDynamic("182", ["181"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   'use strict';
-  var ansiRegex = require("174")();
+  var ansiRegex = require("181")();
   module.exports = function(str) {
     return typeof str === 'string' ? str.replace(ansiRegex, '') : str;
   };
@@ -32743,40 +33366,40 @@ $__System.registerDynamic("175", ["174"], true, function(require, exports, modul
   return module.exports;
 });
 
-$__System.registerDynamic("176", ["175"], true, function(require, exports, module) {
+$__System.registerDynamic("183", ["182"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("175");
+  module.exports = require("182");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("177", ["174"], true, function(require, exports, module) {
+$__System.registerDynamic("184", ["181"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   'use strict';
-  var ansiRegex = require("174");
+  var ansiRegex = require("181");
   var re = new RegExp(ansiRegex().source);
   module.exports = re.test.bind(re);
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("178", ["177"], true, function(require, exports, module) {
+$__System.registerDynamic("185", ["184"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("177");
+  module.exports = require("184");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("179", ["3f"], true, function(require, exports, module) {
+$__System.registerDynamic("186", ["3f"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
@@ -32822,28 +33445,28 @@ $__System.registerDynamic("179", ["3f"], true, function(require, exports, module
   return module.exports;
 });
 
-$__System.registerDynamic("17a", ["179"], true, function(require, exports, module) {
+$__System.registerDynamic("187", ["186"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("179");
+  module.exports = require("186");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("17b", ["170", "172", "176", "178", "17a", "3f"], true, function(require, exports, module) {
+$__System.registerDynamic("188", ["17d", "17f", "183", "185", "187", "3f"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   (function(process) {
     'use strict';
-    var escapeStringRegexp = require("170");
-    var ansiStyles = require("172");
-    var stripAnsi = require("176");
-    var hasAnsi = require("178");
-    var supportsColor = require("17a");
+    var escapeStringRegexp = require("17d");
+    var ansiStyles = require("17f");
+    var stripAnsi = require("183");
+    var hasAnsi = require("185");
+    var supportsColor = require("187");
     var defineProps = Object.defineProperties;
     var isSimpleWindowsTerm = process.platform === 'win32' && !/^xterm/i.test(process.env.TERM);
     function Chalk(options) {
@@ -32917,26 +33540,26 @@ $__System.registerDynamic("17b", ["170", "172", "176", "178", "17a", "3f"], true
   return module.exports;
 });
 
-$__System.registerDynamic("17c", ["17b"], true, function(require, exports, module) {
+$__System.registerDynamic("189", ["188"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("17b");
+  module.exports = require("188");
   global.define = __define;
   return module.exports;
 });
 
-$__System.registerDynamic("17d", ["16a", "16c", "16e", "17c", "3f"], true, function(require, exports, module) {
+$__System.registerDynamic("18a", ["177", "179", "17b", "189", "3f"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
   (function(process) {
-    var Counter = require("16a");
-    var humanize = require("16c");
-    var bytes = require("16e");
-    var chalk = require("17c");
+    var Counter = require("177");
+    var humanize = require("179");
+    var bytes = require("17b");
+    var chalk = require("189");
     var isatty = process.stdout.isTTY;
     module.exports = dev;
     var colorCodes = {
@@ -33000,53 +33623,146 @@ $__System.registerDynamic("17d", ["16a", "16c", "16e", "17c", "3f"], true, funct
   return module.exports;
 });
 
-$__System.registerDynamic("17e", ["17d"], true, function(require, exports, module) {
+$__System.registerDynamic("18b", ["18a"], true, function(require, exports, module) {
   ;
   var global = this,
       __define = global.define;
   global.define = undefined;
-  module.exports = require("17d");
+  module.exports = require("18a");
   global.define = __define;
   return module.exports;
 });
 
-$__System.register('17f', ['49'], function (_export) {
-  var _regeneratorRuntime, controller;
-
-  return {
-    setters: [function (_) {
-      _regeneratorRuntime = _['default'];
-    }],
-    execute: function () {
-      'use strict';
-
-      controller = {
-        basePath: '/api',
-
-        getName: '/assignments',
-        get: _regeneratorRuntime.mark(function get(next) {
-          return _regeneratorRuntime.wrap(function get$(context$1$0) {
-            while (1) switch (context$1$0.prev = context$1$0.next) {
-              case 0:
-                context$1$0.next = 2;
-                return next;
-
-              case 2:
-                this.body = 'GET: assignments from imported controller';
-
-              case 3:
-              case 'end':
-                return context$1$0.stop();
-            }
-          }, get, this);
-        })
-      };
-
-      _export('default', controller);
+$__System.registerDynamic("18c", [], true, function(require, exports, module) {
+  ;
+  var global = this,
+      __define = global.define;
+  global.define = undefined;
+  (function() {
+    var validator = new RegExp("^[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}$", "i");
+    function gen(count) {
+      var out = "";
+      for (var i = 0; i < count; i++) {
+        out += (((1 + Math.random()) * 0x10000) | 0).toString(16).substring(1);
+      }
+      return out;
     }
-  };
+    function Guid(guid) {
+      if (!guid)
+        throw new TypeError("Invalid argument; `value` has no value.");
+      this.value = Guid.EMPTY;
+      if (guid && guid instanceof Guid) {
+        this.value = guid.toString();
+      } else if (guid && Object.prototype.toString.call(guid) === "[object String]" && Guid.isGuid(guid)) {
+        this.value = guid;
+      }
+      this.equals = function(other) {
+        return Guid.isGuid(other) && this.value == other;
+      };
+      this.isEmpty = function() {
+        return this.value === Guid.EMPTY;
+      };
+      this.toString = function() {
+        return this.value;
+      };
+      this.toJSON = function() {
+        return this.value;
+      };
+    }
+    ;
+    Guid.EMPTY = "00000000-0000-0000-0000-000000000000";
+    Guid.isGuid = function(value) {
+      return value && (value instanceof Guid || validator.test(value.toString()));
+    };
+    Guid.create = function() {
+      return new Guid([gen(2), gen(1), gen(1), gen(1), gen(3)].join("-"));
+    };
+    Guid.raw = function() {
+      return [gen(2), gen(1), gen(1), gen(1), gen(3)].join("-");
+    };
+    if (typeof module != 'undefined' && module.exports) {
+      module.exports = Guid;
+    } else if (typeof window != 'undefined') {
+      window.Guid = Guid;
+    }
+  })();
+  global.define = __define;
+  return module.exports;
 });
-$__System.register('180', ['49'], function (_export) {
+
+$__System.registerDynamic("18d", ["18c"], true, function(require, exports, module) {
+  ;
+  var global = this,
+      __define = global.define;
+  global.define = undefined;
+  module.exports = require("18c");
+  global.define = __define;
+  return module.exports;
+});
+
+$__System.register('18e', ['49', '18d'], function (_export) {
+    var _regeneratorRuntime, Guid, azure, azureTableService, entGen, controller;
+
+    return {
+        setters: [function (_) {
+            _regeneratorRuntime = _['default'];
+        }, function (_d) {
+            Guid = _d['default'];
+        }],
+        execute: function () {
+            'use strict';
+
+            azure = require('azure-storage');
+            azureTableService = azure.createTableService('sc2iq', 'sxSu1H9mUeJvkrixmdD5EN+GdRx92XcR4tw1gnUl+rpfEim3c7w9ruIy3lO7aEuF3/TWWl5cj6KwMi/bY8cwkw==');
+
+            azureTableService.createTableIfNotExists('mytable', function (error, result, response) {
+                if (!error) {
+                    // Table exists or created
+                }
+            });
+
+            entGen = azure.TableUtilities.entityGenerator;
+            controller = {
+                basePath: '/api',
+
+                getName: '/assignments',
+                get: _regeneratorRuntime.mark(function get(next) {
+                    var guid, entity;
+                    return _regeneratorRuntime.wrap(function get$(context$1$0) {
+                        while (1) switch (context$1$0.prev = context$1$0.next) {
+                            case 0:
+                                guid = Guid.raw();
+                                entity = {
+                                    PartitionKey: entGen.String('assignments'),
+                                    RowKey: entGen.String(guid),
+                                    boolValueTrue: entGen.Boolean(true),
+                                    boolValueFalse: entGen.Boolean(false),
+                                    intValue: entGen.Int32(42),
+                                    dateValue: entGen.DateTime(new Date(Date.UTC(2011, 10, 25))),
+                                    complexDateValue: entGen.DateTime(new Date(Date.UTC(2013, 2, 16, 1, 46, 20)))
+                                };
+
+                                azureTableService.insertEntity('mytable', entity, function (error, result, response) {
+                                    if (!error) {
+                                        // Entity inserted
+                                    }
+                                });
+
+                                this.body = 'GET: assignments from imported controller: ' + guid + '\n      ' + JSON.stringify(entity, null, '  ') + '\n    ';
+
+                            case 4:
+                            case 'end':
+                                return context$1$0.stop();
+                        }
+                    }, get, this);
+                })
+            };
+
+            _export('default', controller);
+        }
+    };
+});
+$__System.register('18f', ['49'], function (_export) {
   var _regeneratorRuntime, controller;
 
   return {
@@ -33068,7 +33784,7 @@ $__System.register('180', ['49'], function (_export) {
                 return next;
 
               case 2:
-                this.body = 'GET: assignments from imported controller';
+                this.body = 'GET: assignments from imported controller: ' + Guid.raw();
 
               case 3:
               case 'end':
@@ -33082,39 +33798,39 @@ $__System.register('180', ['49'], function (_export) {
     }
   };
 });
-$__System.register('181', ['180', '17f'], function (_export) {
+$__System.register('190', ['18e', '18f'], function (_export) {
   'use strict';
 
-  var sectionsController, assignmentsController;
+  var assignments, sections;
   return {
-    setters: [function (_) {
-      sectionsController = _['default'];
+    setters: [function (_e) {
+      assignments = _e['default'];
     }, function (_f) {
-      assignmentsController = _f['default'];
+      sections = _f['default'];
     }],
     execute: function () {
-      _export('assignmentsController', assignmentsController);
+      _export('assignments', assignments);
 
-      _export('sectionsController', sectionsController);
+      _export('sections', sections);
     }
   };
 });
-$__System.register('1', ['49', '161', '168', '181', '4e', '17e'], function (_export) {
-  var _regeneratorRuntime, koa, Router, controllers, _Object$keys, logger, app, router;
+$__System.register('1', ['49', '175', '190', '4e', '16e', '18b'], function (_export) {
+  var _regeneratorRuntime, Router, controllers, _Object$keys, koa, logger, app, router;
 
   return {
     setters: [function (_) {
       _regeneratorRuntime = _['default'];
     }, function (_2) {
-      koa = _2['default'];
+      Router = _2['default'];
     }, function (_3) {
-      Router = _3['default'];
-    }, function (_4) {
-      controllers = _4;
+      controllers = _3;
     }, function (_e) {
       _Object$keys = _e['default'];
     }, function (_e2) {
-      logger = _e2['default'];
+      koa = _e2['default'];
+    }, function (_b) {
+      logger = _b['default'];
     }],
     execute: function () {
       'use strict';
