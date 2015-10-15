@@ -20,11 +20,14 @@ System.config({
     "babel-runtime": "npm:babel-runtime@5.8.25",
     "bluebird": "npm:bluebird@2.10.1",
     "core-js": "npm:core-js@1.2.0",
+    "firebase": "github:firebase/firebase-bower@2.3.1",
+    "firebase-token-generator": "npm:firebase-token-generator@2.0.0",
     "guid": "npm:guid@0.0.12",
     "koa": "npm:koa@1.0.0",
     "koa-bodyparser": "npm:koa-bodyparser@2.0.1",
     "koa-logger": "npm:koa-logger@1.3.0",
     "koa-router": "npm:koa-router@5.1.2",
+    "moment": "github:moment/moment@2.10.6",
     "github:jspm/nodelibs-assert@0.1.0": {
       "assert": "npm:assert@1.3.0"
     },
@@ -389,6 +392,10 @@ System.config({
       "buffer": "github:jspm/nodelibs-buffer@0.1.0",
       "create-hash": "npm:create-hash@1.1.2",
       "crypto": "github:jspm/nodelibs-crypto@0.1.0"
+    },
+    "npm:firebase-token-generator@2.0.0": {
+      "assert": "github:jspm/nodelibs-assert@0.1.0",
+      "buffer": "github:jspm/nodelibs-buffer@0.1.0"
     },
     "npm:forever-agent@0.6.1": {
       "http": "github:jspm/nodelibs-http@1.7.1",

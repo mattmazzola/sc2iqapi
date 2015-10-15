@@ -33,6 +33,8 @@ const controller = {
         }
     });
 
+    yield next;
+    
     this.body = `GET: assignments from imported controller: ${guid}
       ${JSON.stringify(entity, null, '  ')}
     `;
