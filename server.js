@@ -38286,8 +38286,42 @@ $__System.register('18e', ['49', '18d'], function (_export) {
 
                 getName: '/assignments',
                 get: _regeneratorRuntime.mark(function get(next) {
-                    var guid, entity;
+                    var query;
                     return _regeneratorRuntime.wrap(function get$(context$1$0) {
+                        while (1) switch (context$1$0.prev = context$1$0.next) {
+                            case 0:
+                                query = new azure.TableQuery().where('PartitionKey eq ', 'assignments');
+
+                                console.log('query: ', query);
+
+                                azureTableService.queryEntities('mytable', query, null, function (error, result, response) {
+                                    if (!error) {
+                                        // result.entries contains entities matching the query
+                                        console.log('Query completed');
+
+                                        this.body = 'GET /assignments\n' + JSON.stringify(result.entries) + '\n';
+                                    }
+                                });
+
+                                context$1$0.next = 5;
+                                return next;
+
+                            case 5:
+
+                                console.log('Yeilded');
+                                this.body = 'GET /assignments';
+
+                            case 7:
+                            case 'end':
+                                return context$1$0.stop();
+                        }
+                    }, get, this);
+                }),
+
+                postName: '/assignments',
+                post: _regeneratorRuntime.mark(function post(next) {
+                    var guid, entity;
+                    return _regeneratorRuntime.wrap(function post$(context$1$0) {
                         while (1) switch (context$1$0.prev = context$1$0.next) {
                             case 0:
                                 guid = Guid.raw();
@@ -38312,13 +38346,13 @@ $__System.register('18e', ['49', '18d'], function (_export) {
 
                             case 5:
 
-                                this.body = 'GET: assignments from imported controller: ' + guid + '\n      ' + JSON.stringify(entity, null, '  ') + '\n    ';
+                                this.body = 'POST /assignments ' + guid + '\n\n' + JSON.stringify(entity, null, '  ') + '\n';
 
                             case 6:
                             case 'end':
                                 return context$1$0.stop();
                         }
-                    }, get, this);
+                    }, post, this);
                 })
             };
 
@@ -38474,8 +38508,8 @@ $__System.register('1', ['49', '175', '194', '4e', '16e', '18b'], function (_exp
           var value = controller[key];
           if (typeof value === 'function') {
             var path = '' + controller.basePath + controller[key + 'Name'];
-            console.log('Registring: controller:' + path);
-            router.get(path, value);
+            console.log('Registring: ' + key + ': ' + path);
+            router[key](path, value);
           }
         });
       });

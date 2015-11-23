@@ -23,8 +23,8 @@ Object.keys(controllers).forEach(controllerName => {
     const value = controller[key];
     if(typeof value === 'function') {
       const path = `${controller.basePath}${controller[key + 'Name']}`;
-      console.log(`Registring: controller:${path}`);
-      router.get(path, value);
+      console.log(`Registring: ${key}: ${path}`);
+      router[key](path, value);
     }
   });
 });

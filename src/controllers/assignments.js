@@ -16,6 +16,30 @@ const controller = {
 
   getName: '/assignments',
   *get(next) {
+    const query = new azure.TableQuery()
+      .where('PartitionKey eq ', 'assignments');
+
+    console.log('query: ', query);
+
+    azureTableService.queryEntities('mytable', query, null, function(error, result, response) {
+      if (!error) {
+        // result.entries contains entities matching the query
+        console.log('Query completed');
+
+        this.body = `GET /assignments
+${JSON.stringify(result.entries)}
+`;
+      }
+    });
+
+    yield next;
+
+    console.log('Yeilded');
+    this.body = `GET /assignments`;
+  },
+
+  postName: '/assignments',
+  *post(next) {
     const guid = Guid.raw();
     const entity = {
       PartitionKey: entGen.String('assignments'),
@@ -34,11 +58,12 @@ const controller = {
     });
 
     yield next;
-    
-    this.body = `GET: assignments from imported controller: ${guid}
-      ${JSON.stringify(entity, null, '  ')}
-    `;
-  },
+
+    this.body = `POST /assignments ${guid}
+
+${JSON.stringify(entity, null, '  ')}
+`;
+  }
 };
 
 export default controller;
