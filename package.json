@@ -50,7 +50,7 @@
     "gulp-help": "^1.6.1",
     "gulp-load-plugins": "^1.0.0-rc.1",
     "gulp-task-listing": "^1.0.1",
-    "jspm": "^0.16.10"
+    "jspm": "^0.16.15"
   },
   "dependencies": {}
 }
