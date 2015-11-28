@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{CF0F4ABC-26B2-432E-8EAC-D1FC4D0FBE34}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{CBF5A89E-A346-4FD9-8874-A9F7E4B3B0A2}"
+	ProjectSection(SolutionItems) = preProject
+		global.json = global.json
+	EndProjectSection
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "sc2iqapi", "src\sc2iqapi\sc2iqapi.xproj", "{15DA1234-43A5-4A11-B2AB-26A884BFB8CC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{15DA1234-43A5-4A11-B2AB-26A884BFB8CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{15DA1234-43A5-4A11-B2AB-26A884BFB8CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{15DA1234-43A5-4A11-B2AB-26A884BFB8CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{15DA1234-43A5-4A11-B2AB-26A884BFB8CC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{15DA1234-43A5-4A11-B2AB-26A884BFB8CC} = {CF0F4ABC-26B2-432E-8EAC-D1FC4D0FBE34}
+	EndGlobalSection
+EndGlobal
