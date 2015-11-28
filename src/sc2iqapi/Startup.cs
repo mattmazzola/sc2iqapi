@@ -13,6 +13,8 @@ using Microsoft.Framework.Runtime;
 using Microsoft.Framework.Logging;
 using Newtonsoft.Json.Serialization;
 using sc2iqapi.Options;
+using sc2iqapi.Models;
+using Microsoft.Data.Entity;
 
 namespace sc2iqapi
 {
@@ -55,6 +57,10 @@ namespace sc2iqapi
                                                                 .AllowAnyMethod()
                                                                 .AllowAnyHeader()));
 
+            services.AddEntityFramework()
+                    .AddSqlServer()
+                    .AddDbContext<Sc2IqContext>(options => options.UseSqlServer(Configuration["Data:ConnectionString"]));
+
             // Add Application Insights data collection services to the services container.
             //services.AddApplicationInsightsTelemetry(Configuration);
 
@@ -92,6 +98,8 @@ namespace sc2iqapi
             app.UseMvc();
             // Add the following route for porting Web API 2 controllers.
             // routes.MapWebApiRoute("DefaultApi", "api/{controller}/{id?}");
+
+            SampleData.Initialize(app.ApplicationServices);
         }
     }
 }

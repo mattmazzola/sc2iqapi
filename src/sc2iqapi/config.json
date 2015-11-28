@@ -1,5 +1,8 @@
 {
   "ApplicationInsights": {
     "InstrumentationKey": ""
+  },
+  "Data": {
+    "ConnectionString": "Server=(localdb)\\MSSQLLocalDB;Database=Sc2Iq;Trusted_Connection=True;MultipleActiveResultSets=true"
   }
 }
