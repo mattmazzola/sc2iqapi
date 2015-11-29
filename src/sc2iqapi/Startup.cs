@@ -24,6 +24,7 @@ namespace sc2iqapi
         {
             // Setup configuration sources.
             var builder = new ConfigurationBuilder(appEnv.ApplicationBasePath)
+                //.SetBasePath(appEnv.ApplicationBasePath) // beta8
                 .AddJsonFile("config.json");
 
             if (env.IsEnvironment("Development"))
