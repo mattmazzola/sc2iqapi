@@ -25,12 +25,6 @@ namespace sc2iqapi.Controllers
 
         Secrets Options { get; }
 
-        [HttpGet]
-        public IActionResult Get()
-        {
-            return Json(Options);
-        }
-
         [HttpPost]
         public async Task<IActionResult> Post([FromBody]OauthTokenData oauthTokenData)
         {
