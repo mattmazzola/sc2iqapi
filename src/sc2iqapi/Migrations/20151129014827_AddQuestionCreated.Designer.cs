@@ -7,9 +7,19 @@ using sc2iqapi.Models;
 namespace sc2iqapi.Migrations
 {
     [ContextType(typeof(Sc2IqContext))]
-    partial class Sc2IqContextModelSnapshot : ModelSnapshot
+    partial class AddQuestionCreated
     {
-        public override void BuildModel(ModelBuilder builder)
+        public override string Id
+        {
+            get { return "20151129014827_AddQuestionCreated"; }
+        }
+        
+        public override string ProductVersion
+        {
+            get { return "7.0.0-beta5-13549"; }
+        }
+        
+        public override void BuildTargetModel(ModelBuilder builder)
         {
             builder
                 .Annotation("SqlServer:DefaultSequenceName", "DefaultSequence")

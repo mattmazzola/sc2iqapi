@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Mvc;
+using sc2iqapi.Models;
+using Microsoft.Data.Entity.Update;
 
 // For more information on enabling Web API for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -11,36 +13,74 @@ namespace sc2iqapi.Controllers
     [Route("api/[controller]")]
     public class TagsController : Controller
     {
-        // GET: api/values
+        [FromServices]
+        public Sc2IqContext DbContext { get; set; }
+
         [HttpGet]
-        public IEnumerable<string> Get()
+        public IActionResult Get()
         {
-            return new string[] { "value1", "value2" };
+            var tags = DbContext.Tags;
+
+            return Json(tags);
         }
 
-        // GET api/values/5
         [HttpGet("{id}")]
-        public string Get(int id)
+        public IActionResult Get(int id)
         {
-            return "value";
+            var tag = DbContext.Tags.FirstOrDefault(q => q.Id == id);
+
+            if (tag == null)
+            {
+                return HttpNotFound();
+            }
+
+            return Json(tag);
         }
 
-        // POST api/values
         [HttpPost]
-        public void Post([FromBody]string value)
+        public async Task<IActionResult> Post([FromBody]Tag tag)
         {
+            if (!ModelState.IsValid)
+            {
+                return HttpBadRequest(ModelState);
+            }
+
+            tag.Created = DateTimeOffset.Now;
+
+            DbContext.Tags.Add(tag);
+
+            try
+            {
+                await DbContext.SaveChangesAsync();
+            }
+            catch(DbUpdateException e)
+            {
+                ModelState.AddModelError("Error", e.InnerException.Message);
+                return HttpBadRequest(ModelState);
+            }
+
+            return Json(tag);
         }
 
-        // PUT api/values/5
         [HttpPut("{id}")]
         public void Put(int id, [FromBody]string value)
         {
         }
 
-        // DELETE api/values/5
         [HttpDelete("{id}")]
-        public void Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
+            var tag = DbContext.Tags.FirstOrDefault(t => t.Id == id);
+            if (tag == null)
+            {
+                return HttpNotFound();
+            }
+
+            DbContext.Remove(tag);
+
+            await DbContext.SaveChangesAsync();
+
+            return Json(id);
         }
     }
 }
