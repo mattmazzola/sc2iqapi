@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNet.Mvc;
 using sc2iqapi.Models;
 using Microsoft.Data.Entity.Update;
+using Microsoft.Data.Entity;
+using Newtonsoft.Json;
 
 // For more information on enabling Web API for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -17,11 +19,19 @@ namespace sc2iqapi.Controllers
         public Sc2IqContext DbContext { get; set; }
 
         [HttpGet]
-        public IActionResult Get()
+        public async Task<IActionResult> Get()
         {
-            var questions = DbContext.Questions;
+            var questions = await DbContext.Questions
+                .Include(q => q.CreatedBy)
+                .Include(q => q.QuestionTags)
+                .ToListAsync();
 
-            return Json(questions);
+            var jsonSerializerSettings = new JsonSerializerSettings()
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+            };
+
+            return Json(questions, jsonSerializerSettings);
         }
 
         [HttpGet("{id}")]
@@ -45,6 +55,14 @@ namespace sc2iqapi.Controllers
                 return HttpBadRequest(ModelState);
             }
 
+            var userId = 7;
+            var user = DbContext.Users.FirstOrDefault(u => u.Id == userId);
+            if(user == null)
+            {
+                return HttpBadRequest(new Exception($"Could not find user with id: {userId}"));
+            }
+
+            question.CreatedBy = user;
             question.Created = DateTimeOffset.Now;
 
             DbContext.Questions.Add(question);
@@ -59,7 +77,30 @@ namespace sc2iqapi.Controllers
                 return HttpBadRequest(ModelState);
             }
 
-            return Json(question);
+            var questionTags = question.QuestionTags;
+            foreach(var questionTag in questionTags)
+            {
+                questionTag.QuestionId = question.Id;
+            }
+
+            DbContext.QuestionTags.AddRange(questionTags);
+
+            try
+            {
+                await DbContext.SaveChangesAsync();
+            }
+            catch (DbUpdateException e)
+            {
+                ModelState.AddModelError("Error", e.InnerException.Message);
+                return HttpBadRequest(ModelState);
+            }
+
+            var jsonSerializerSettings = new JsonSerializerSettings()
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+            };
+
+            return Json(question, jsonSerializerSettings);
         }
 
         [HttpDelete("{id}")]

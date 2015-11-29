@@ -17,7 +17,8 @@ namespace sc2iqapi.Models
         [Editable(false)]
         public DateTimeOffset Created { get; set; }
 
-        [Required]
-        public int CreatedBy { get; set; }
+        public User CreatedBy { get; set; }
+
+        public ICollection<QuestionTag> QuestionTags { get; set; }
     }
 }

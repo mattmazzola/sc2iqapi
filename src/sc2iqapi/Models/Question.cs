@@ -37,14 +37,15 @@ namespace sc2iqapi.Models
         [Editable(false)]
         public DateTimeOffset Created { get; set; }
 
-        [Required]
-        public int CreatedBy { get; set; }
+        public User CreatedBy { get; set; }
 
         [Required]
         [Range(1, 10)]
         public int Difficulty { get; set; }
 
         public QuestionState State { get; set; }
+
+        public ICollection<QuestionTag> QuestionTags { get; set; }
     }
 
     public enum QuestionState

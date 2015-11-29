@@ -45,6 +45,14 @@ namespace sc2iqapi.Controllers
                 return HttpBadRequest(ModelState);
             }
 
+            var userId = 7;
+            var user = DbContext.Users.FirstOrDefault(u => u.Id == userId);
+            if (user == null)
+            {
+                return HttpBadRequest(new Exception($"Could not find user with id: {userId}"));
+            }
+
+            tag.CreatedBy = user;
             tag.Created = DateTimeOffset.Now;
 
             DbContext.Tags.Add(tag);
