@@ -10,5 +10,6 @@ namespace sc2iqapi.Models
     {
         public DbSet<Question> Questions { get; set; }
         public DbSet<Tag> Tags { get; set; }
+        public DbSet<User> Users { get; set; }
     }
 }
