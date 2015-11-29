@@ -9,5 +9,6 @@ namespace sc2iqapi.Models
     public class Sc2IqContext : DbContext
     {
         public DbSet<Question> Questions { get; set; }
+        public DbSet<Tag> Tags { get; set; }
     }
 }
