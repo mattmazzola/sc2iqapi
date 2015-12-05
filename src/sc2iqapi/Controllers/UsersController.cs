@@ -65,5 +65,29 @@ namespace sc2iqapi.Controllers
 
             return Json(user);
         }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var user = DbContext.Users.FirstOrDefault(u => u.Id == id);
+            if (user == null)
+            {
+                return HttpNotFound();
+            }
+
+            DbContext.Remove(user);
+
+            try
+            {
+                await DbContext.SaveChangesAsync();
+            }
+            catch (DbUpdateException e)
+            {
+                ModelState.AddModelError("Error", e.InnerException.Message);
+                return HttpBadRequest(ModelState);
+            }
+
+            return Json(id);
+        }
     }
 }

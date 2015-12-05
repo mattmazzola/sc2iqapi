@@ -24,7 +24,6 @@ namespace sc2iqapi.Controllers
             return Json(polls);
         }
 
-        // GET api/values/5
         [HttpGet("{id}")]
         public IActionResult Get(int id)
         {
@@ -38,7 +37,6 @@ namespace sc2iqapi.Controllers
             return Json(poll);
         }
 
-        // POST api/values
         [HttpPost]
         public async Task<IActionResult> Post([FromBody]Poll poll)
         {
@@ -74,15 +72,36 @@ namespace sc2iqapi.Controllers
         }
 
         // PUT api/values/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody]string value)
+        [HttpPut("{id}/vote")]
+        public async Task<IActionResult> Put(int id, [FromQuery]bool down)
         {
-        }
+            var poll = DbContext.Polls.FirstOrDefault(q => q.Id == id);
 
-        // DELETE api/values/5
-        [HttpDelete("{id}")]
-        public void Delete(int id)
-        {
+            if (poll == null)
+            {
+                return HttpNotFound();
+            }
+
+            if(down)
+            {
+                poll.Votes -= 1;
+            }
+            else
+            {
+                poll.Votes += 1;
+            }
+
+            try
+            {
+                await DbContext.SaveChangesAsync();
+            }
+            catch (DbUpdateException e)
+            {
+                ModelState.AddModelError("Error", e.InnerException.Message);
+                return HttpBadRequest(ModelState);
+            }
+
+            return Json(poll);
         }
     }
 }
