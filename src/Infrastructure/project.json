@@ -1,0 +1,15 @@
+{
+  "version": "1.0.0-*",
+  "description": "Infrastructure Class Library",
+  "authors": [ "mattm" ],
+  "tags": [ "" ],
+  "projectUrl": "",
+  "licenseUrl": "",
+  "frameworks": {
+    "net451": { }
+  },
+  "dependencies": {
+    "WindowsAzure.ServiceBus": "3.0.9",
+    "Microsoft.WindowsAzure.ConfigurationManager": "3.1.0"
+  }
+}

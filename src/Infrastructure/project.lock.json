@@ -1,0 +1,123 @@
+{
+  "locked": false,
+  "version": 2,
+  "targets": {
+    ".NETFramework,Version=v4.5.1": {
+      "Microsoft.WindowsAzure.ConfigurationManager/3.1.0": {
+        "type": "package",
+        "compile": {
+          "lib/net40/Microsoft.WindowsAzure.Configuration.dll": {}
+        },
+        "runtime": {
+          "lib/net40/Microsoft.WindowsAzure.Configuration.dll": {}
+        }
+      },
+      "WindowsAzure.ServiceBus/3.0.9": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.WindowsAzure.ConfigurationManager": null
+        },
+        "frameworkAssemblies": [
+          "System.Runtime.Serialization",
+          "System.ServiceModel",
+          "System.Xml"
+        ],
+        "compile": {
+          "lib/net45-full/Microsoft.ServiceBus.dll": {}
+        },
+        "runtime": {
+          "lib/net45-full/Microsoft.ServiceBus.dll": {}
+        }
+      }
+    },
+    ".NETFramework,Version=v4.5.1/win7-x86": {
+      "Microsoft.WindowsAzure.ConfigurationManager/3.1.0": {
+        "type": "package",
+        "compile": {
+          "lib/net40/Microsoft.WindowsAzure.Configuration.dll": {}
+        },
+        "runtime": {
+          "lib/net40/Microsoft.WindowsAzure.Configuration.dll": {}
+        }
+      },
+      "WindowsAzure.ServiceBus/3.0.9": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.WindowsAzure.ConfigurationManager": null
+        },
+        "frameworkAssemblies": [
+          "System.Runtime.Serialization",
+          "System.ServiceModel",
+          "System.Xml"
+        ],
+        "compile": {
+          "lib/net45-full/Microsoft.ServiceBus.dll": {}
+        },
+        "runtime": {
+          "lib/net45-full/Microsoft.ServiceBus.dll": {}
+        }
+      }
+    },
+    ".NETFramework,Version=v4.5.1/win7-x64": {
+      "Microsoft.WindowsAzure.ConfigurationManager/3.1.0": {
+        "type": "package",
+        "compile": {
+          "lib/net40/Microsoft.WindowsAzure.Configuration.dll": {}
+        },
+        "runtime": {
+          "lib/net40/Microsoft.WindowsAzure.Configuration.dll": {}
+        }
+      },
+      "WindowsAzure.ServiceBus/3.0.9": {
+        "type": "package",
+        "dependencies": {
+          "Microsoft.WindowsAzure.ConfigurationManager": null
+        },
+        "frameworkAssemblies": [
+          "System.Runtime.Serialization",
+          "System.ServiceModel",
+          "System.Xml"
+        ],
+        "compile": {
+          "lib/net45-full/Microsoft.ServiceBus.dll": {}
+        },
+        "runtime": {
+          "lib/net45-full/Microsoft.ServiceBus.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Microsoft.WindowsAzure.ConfigurationManager/3.1.0": {
+      "type": "package",
+      "sha512": "k0iBbi8gYM2yrlzXxO1ODmMWhS+7dfWR80yQ1dbf+nad25/AGxm2mF7UCU3t7kR3ykIU6VstX1Zcku2T+Wi3HA==",
+      "files": [
+        "lib/net40/Microsoft.WindowsAzure.Configuration.dll",
+        "lib/net40/Microsoft.WindowsAzure.Configuration.xml",
+        "Microsoft.WindowsAzure.ConfigurationManager.3.1.0.nupkg",
+        "Microsoft.WindowsAzure.ConfigurationManager.3.1.0.nupkg.sha512",
+        "Microsoft.WindowsAzure.ConfigurationManager.nuspec"
+      ]
+    },
+    "WindowsAzure.ServiceBus/3.0.9": {
+      "type": "package",
+      "sha512": "5pw4QG7FmtMFd4mxYctOyDfhluapYvU2eqmktYU2UsZfMC4IpCVicUVnro1jOr1kA9f/Ta7YwHWqGbclTx0sLQ==",
+      "files": [
+        "content/app.config.install.xdt",
+        "content/web.config.install.xdt",
+        "lib/net45-full/Microsoft.ServiceBus.dll",
+        "lib/net45-full/Microsoft.ServiceBus.xml",
+        "WindowsAzure.ServiceBus.3.0.9.nupkg",
+        "WindowsAzure.ServiceBus.3.0.9.nupkg.sha512",
+        "WindowsAzure.ServiceBus.nuspec"
+      ]
+    }
+  },
+  "projectFileDependencyGroups": {
+    "": [
+      "WindowsAzure.ServiceBus >= 3.0.9",
+      "Microsoft.WindowsAzure.ConfigurationManager >= 3.1.0"
+    ],
+    ".NETFramework,Version=v4.5.1": []
+  }
+}
