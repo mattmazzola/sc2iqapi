@@ -10,7 +10,7 @@ namespace sc2iq.EventProcessor
 {
     public class Functions
     {
-        public static void ProcessPollsEventsOnMessage([ServiceBusTrigger("polls/events", "all", AccessRights.Listen)] BrokeredMessage message, TextWriter log)
+        public async static void ProcessPollsEventsOnMessage([ServiceBusTrigger("polls/events", "all", AccessRights.Listen)] BrokeredMessage message, TextWriter log)
         {
             var json = message.GetBody<string>();
 
@@ -24,9 +24,21 @@ namespace sc2iq.EventProcessor
             {
                 if (message.Label.Equals(typeof(PollCreatedEvent).ToString()))
                 {
-                    var pollCreateCommand = JsonConvert.DeserializeObject<PollCreatedEvent>(json);
-                    Console.WriteLine(pollCreateCommand);
-                    Console.WriteLine($"Title: {pollCreateCommand.Title}");
+                    PollCreatedEvent pollCreatedEvent = null;
+
+                    try
+                    {
+                        pollCreatedEvent = JsonConvert.DeserializeObject<PollCreatedEvent>(json);
+                        Console.WriteLine(pollCreatedEvent);
+                        Console.WriteLine($"Title: {pollCreatedEvent.Title}");
+                    }
+                    catch(Exception e)
+                    {
+                        await message.DeadLetterAsync($"Message could not be deserialized as type: {message.Label}", e.ToString());
+                        throw;
+                    }
+
+                    await message.CompleteAsync();
                 }
             }
         }

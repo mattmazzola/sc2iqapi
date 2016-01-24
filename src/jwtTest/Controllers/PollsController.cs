@@ -11,7 +11,7 @@ using Microsoft.ServiceBus;
 using Microsoft.ServiceBus.Messaging;
 using Newtonsoft.Json;
 using sc2iq.Models.Infrastructure.Commands;
-using sc2iq.Models.Infrastructure.Aggregates;
+using jwtTest.Models;
 
 // For more information on enabling Web API for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -47,7 +47,7 @@ namespace jwtTest.Controllers
         [HttpPost]
         public async Task<IActionResult> Post([FromBody]Poll poll)
         {
-            var pollCreateCommand = new PollCreateCommand(poll)
+            var pollCreateCommand = new PollCreateCommand()
             {
                 Title = poll.Title,
                 Description = poll.Description

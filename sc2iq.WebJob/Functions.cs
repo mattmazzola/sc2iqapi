@@ -12,7 +12,7 @@ namespace sc2iq.WebJob
 {
     public class Functions
     {
-        public static void ProcessPollsCommandsOnMessage([ServiceBusTrigger("polls/commands", "all", AccessRights.Listen)] BrokeredMessage message, TextWriter log)
+        public async static void ProcessPollsCommandsOnMessage([ServiceBusTrigger("polls/commands", "all", AccessRights.Listen)] BrokeredMessage message, TextWriter log)
         {
             var json = message.GetBody<string>();
 
@@ -26,14 +26,25 @@ namespace sc2iq.WebJob
             {
                 if (message.Label.Equals(typeof(PollCreateCommand).ToString()))
                 {
-                    var pollCreateCommand = JsonConvert.DeserializeObject<PollCreateCommand>(json);
-                    Console.WriteLine(pollCreateCommand);
-                    Console.WriteLine($"Title: {pollCreateCommand.Title}");
+                    PollCreateCommand pollCreateCommand = null;
+
+                    try
+                    {
+                        pollCreateCommand = JsonConvert.DeserializeObject<PollCreateCommand>(json);
+                        Console.WriteLine(pollCreateCommand);
+                        Console.WriteLine($"Title: {pollCreateCommand.Title}");
+                    }
+                    catch (Exception e)
+                    {
+                        await message.DeadLetterAsync($"Message could not be deserialized as type: {message.Label}", e.ToString());
+                        throw;
+                    }
 
                     var poll = new Poll(pollCreateCommand.Title, pollCreateCommand.Description);
                     var repository = new PollsRepository();
                     repository.Save(poll);
 
+                    await message.CompleteAsync();
                 }
             }
         }

@@ -51,7 +51,11 @@ namespace sc2iq.Models.Infrastructure.Repositories
             var table = tableClient.GetTableReference("events");
             await table.CreateIfNotExistsAsync();
 
-            var pollCreatedEvent = new PollCreatedEvent(poll);
+            var pollCreatedEvent = new PollCreatedEvent()
+            {
+                Id = poll.Id,
+                Title = poll.Title
+            };
             await table.ExecuteAsync(TableOperation.Insert(pollCreatedEvent));
 
             // Send message to event topic that poll was saved.

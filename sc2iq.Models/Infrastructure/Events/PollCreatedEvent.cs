@@ -13,12 +13,10 @@ namespace sc2iq.Models.Infrastructure.Events
         public Guid Id { get; set; }
         public string Title { get; set; }
 
-        public PollCreatedEvent(Poll poll)
+        public PollCreatedEvent()
         {
             PartitionKey = "poll";
             RowKey = Guid.NewGuid().ToString();
-            Id = poll.Id;
-            Title = poll.Title;
         }
     }
 }

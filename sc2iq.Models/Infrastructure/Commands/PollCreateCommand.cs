@@ -10,7 +10,7 @@ namespace sc2iq.Models.Infrastructure.Commands
         public string Title { get; set; }
         public string Description { get; set; }
 
-        public PollCreateCommand(Poll poll)
+        public PollCreateCommand()
         {
             Id = Guid.NewGuid();
         }

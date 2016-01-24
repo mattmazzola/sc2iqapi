@@ -15,7 +15,9 @@ namespace sc2iq.Models.Infrastructure.Aggregates
 
         public Poll(string title, string description)
         {
+            Description = description;
             Id = Guid.NewGuid();
+            Title = title;
             Votes = 0;
         }
 
