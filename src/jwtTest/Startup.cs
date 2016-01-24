@@ -12,7 +12,6 @@ using System.Security.Cryptography;
 using Microsoft.AspNet.Authorization;
 using Microsoft.AspNet.Authentication.JwtBearer;
 using jwtTest.Options;
-using jwtTest.Infrastructure.Messaging;
 using Newtonsoft.Json.Serialization;
 using Microsoft.ServiceBus;
 using Microsoft.ServiceBus.Messaging;
@@ -46,7 +45,7 @@ namespace jwtTest
             var serviceBusNamespace = Configuration.Get<string>("messaging:namespace");
             var serviceBusManageKey = Configuration.Get<string>("ServiceBusManageKey");
             var contexts = Configuration.Get<List<string>>("messaging:contexts");
-            var defaultSubscriptionName = Configuration.Get<string>("defaultSubscriptionName");
+            var defaultSubscriptionName = Configuration.Get<string>("messaging:defaultSubscriptionName");
 
             // Setup Messaging Infrastructure
             var tokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider("rootmanage", serviceBusManageKey);
@@ -56,7 +55,7 @@ namespace jwtTest
             {
                 var commandsTopicName = $"{context}/commands";
                 var eventsTopicName = $"{context}/events";
-                var defaultTopicDescription = new TopicDescription(string.Empty)
+                var defaultTopicDescription = new TopicDescription(commandsTopicName)
                 {
                     DefaultMessageTimeToLive = TimeSpan.FromDays(1),
                     DuplicateDetectionHistoryTimeWindow = TimeSpan.FromMinutes(10),

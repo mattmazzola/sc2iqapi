@@ -1,4 +1,4 @@
-﻿{
+{
   "version": "1.0.0-*",
   "compilationOptions": {
     "emitEntryPoint": true
@@ -19,8 +19,8 @@
     "Microsoft.Extensions.Logging.Debug": "1.0.0-rc1-final",
     "System.IdentityModel.Tokens": "5.0.0-rc1-211161024",
     "System.IdentityModel.Tokens.Jwt": "5.0.0-rc1-211161024",
-    "WindowsAzure.ServiceBus": "3.0.9",
-    "Microsoft.WindowsAzure.ConfigurationManager": "3.1.0"
+    "Microsoft.WindowsAzure.ConfigurationManager": "3.2.0",
+    "WindowsAzure.ServiceBus": "3.1.2"
   },
 
   "commands": {
@@ -28,7 +28,11 @@
   },
 
   "frameworks": {
-    "dnx451": { }
+    "dnx451": {
+      "dependencies": {
+        "sc2iq.Models": "1.0.0-*"
+      }
+    }
   },
 
   "exclude": [

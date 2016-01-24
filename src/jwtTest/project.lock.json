@@ -1509,7 +1509,7 @@
           "lib/net451/Microsoft.Net.Http.Headers.dll": {}
         }
       },
-      "Microsoft.WindowsAzure.ConfigurationManager/3.1.0": {
+      "Microsoft.WindowsAzure.ConfigurationManager/3.2.0": {
         "type": "package",
         "compile": {
           "lib/net40/Microsoft.WindowsAzure.Configuration.dll": {}
@@ -1526,6 +1526,10 @@
         "runtime": {
           "lib/net45/Newtonsoft.Json.dll": {}
         }
+      },
+      "sc2iq.Models/1.0.0": {
+        "type": "project",
+        "framework": "DNX,Version=v4.5.1"
       },
       "System.Collections/4.0.0": {
         "type": "package",
@@ -1776,10 +1780,10 @@
           "lib/net45/_._": {}
         }
       },
-      "WindowsAzure.ServiceBus/3.0.9": {
+      "WindowsAzure.ServiceBus/3.1.2": {
         "type": "package",
         "dependencies": {
-          "Microsoft.WindowsAzure.ConfigurationManager": null
+          "Microsoft.WindowsAzure.ConfigurationManager": "3.1.0"
         },
         "frameworkAssemblies": [
           "System.Runtime.Serialization",
@@ -3304,7 +3308,7 @@
           "lib/net451/Microsoft.Net.Http.Headers.dll": {}
         }
       },
-      "Microsoft.WindowsAzure.ConfigurationManager/3.1.0": {
+      "Microsoft.WindowsAzure.ConfigurationManager/3.2.0": {
         "type": "package",
         "compile": {
           "lib/net40/Microsoft.WindowsAzure.Configuration.dll": {}
@@ -3321,6 +3325,10 @@
         "runtime": {
           "lib/net45/Newtonsoft.Json.dll": {}
         }
+      },
+      "sc2iq.Models/1.0.0": {
+        "type": "project",
+        "framework": "DNX,Version=v4.5.1"
       },
       "System.Collections/4.0.0": {
         "type": "package",
@@ -3571,10 +3579,10 @@
           "lib/net45/_._": {}
         }
       },
-      "WindowsAzure.ServiceBus/3.0.9": {
+      "WindowsAzure.ServiceBus/3.1.2": {
         "type": "package",
         "dependencies": {
-          "Microsoft.WindowsAzure.ConfigurationManager": null
+          "Microsoft.WindowsAzure.ConfigurationManager": "3.1.0"
         },
         "frameworkAssemblies": [
           "System.Runtime.Serialization",
@@ -5099,7 +5107,7 @@
           "lib/net451/Microsoft.Net.Http.Headers.dll": {}
         }
       },
-      "Microsoft.WindowsAzure.ConfigurationManager/3.1.0": {
+      "Microsoft.WindowsAzure.ConfigurationManager/3.2.0": {
         "type": "package",
         "compile": {
           "lib/net40/Microsoft.WindowsAzure.Configuration.dll": {}
@@ -5116,6 +5124,10 @@
         "runtime": {
           "lib/net45/Newtonsoft.Json.dll": {}
         }
+      },
+      "sc2iq.Models/1.0.0": {
+        "type": "project",
+        "framework": "DNX,Version=v4.5.1"
       },
       "System.Collections/4.0.0": {
         "type": "package",
@@ -5366,10 +5378,10 @@
           "lib/net45/_._": {}
         }
       },
-      "WindowsAzure.ServiceBus/3.0.9": {
+      "WindowsAzure.ServiceBus/3.1.2": {
         "type": "package",
         "dependencies": {
-          "Microsoft.WindowsAzure.ConfigurationManager": null
+          "Microsoft.WindowsAzure.ConfigurationManager": "3.1.0"
         },
         "frameworkAssemblies": [
           "System.Runtime.Serialization",
@@ -5386,6 +5398,10 @@
     }
   },
   "libraries": {
+    "sc2iq.Models/1.0.0": {
+      "type": "project",
+      "path": "../../wrap/sc2iq.Models/project.json"
+    },
     "Microsoft.ApplicationInsights/1.1.1-beta": {
       "type": "package",
       "sha512": "aqtQ8KNFMGBFCmU3kkkEM7PlyPFvfh/1uKTxixD+myMzB9EjYeGOf0LvFnpkT1sp3voXfU8MUN+eYets8TutdQ==",
@@ -6560,14 +6576,14 @@
         "Microsoft.Net.Http.Headers.nuspec"
       ]
     },
-    "Microsoft.WindowsAzure.ConfigurationManager/3.1.0": {
+    "Microsoft.WindowsAzure.ConfigurationManager/3.2.0": {
       "type": "package",
-      "sha512": "k0iBbi8gYM2yrlzXxO1ODmMWhS+7dfWR80yQ1dbf+nad25/AGxm2mF7UCU3t7kR3ykIU6VstX1Zcku2T+Wi3HA==",
+      "sha512": "YLpdE6dE7p0J8jnVgSIeMgTHnm62RHrHXPqWJeTUhxIt2he27raXsC78Ex073xIT+HBSmC3zUTbQiYxzPPeyWg==",
       "files": [
         "lib/net40/Microsoft.WindowsAzure.Configuration.dll",
         "lib/net40/Microsoft.WindowsAzure.Configuration.xml",
-        "Microsoft.WindowsAzure.ConfigurationManager.3.1.0.nupkg",
-        "Microsoft.WindowsAzure.ConfigurationManager.3.1.0.nupkg.sha512",
+        "Microsoft.WindowsAzure.ConfigurationManager.3.2.0.nupkg",
+        "Microsoft.WindowsAzure.ConfigurationManager.3.2.0.nupkg.sha512",
         "Microsoft.WindowsAzure.ConfigurationManager.nuspec"
       ]
     },
@@ -7397,16 +7413,16 @@
         "System.Threading.nuspec"
       ]
     },
-    "WindowsAzure.ServiceBus/3.0.9": {
+    "WindowsAzure.ServiceBus/3.1.2": {
       "type": "package",
-      "sha512": "5pw4QG7FmtMFd4mxYctOyDfhluapYvU2eqmktYU2UsZfMC4IpCVicUVnro1jOr1kA9f/Ta7YwHWqGbclTx0sLQ==",
+      "sha512": "nEbtqJB1lt12IRxJiKZwREMS1GW9+HQ+g/8LPZTFztx82jQIc4EQUwHU1FGIHjjVqkGUfeRmPo6LBzijMw6rpw==",
       "files": [
         "content/app.config.install.xdt",
         "content/web.config.install.xdt",
         "lib/net45-full/Microsoft.ServiceBus.dll",
         "lib/net45-full/Microsoft.ServiceBus.xml",
-        "WindowsAzure.ServiceBus.3.0.9.nupkg",
-        "WindowsAzure.ServiceBus.3.0.9.nupkg.sha512",
+        "WindowsAzure.ServiceBus.3.1.2.nupkg",
+        "WindowsAzure.ServiceBus.3.1.2.nupkg.sha512",
         "WindowsAzure.ServiceBus.nuspec"
       ]
     }
@@ -7427,9 +7443,11 @@
       "Microsoft.Extensions.Logging.Debug >= 1.0.0-rc1-final",
       "System.IdentityModel.Tokens >= 5.0.0-rc1-211161024",
       "System.IdentityModel.Tokens.Jwt >= 5.0.0-rc1-211161024",
-      "WindowsAzure.ServiceBus >= 3.0.9",
-      "Microsoft.WindowsAzure.ConfigurationManager >= 3.1.0"
+      "Microsoft.WindowsAzure.ConfigurationManager >= 3.2.0",
+      "WindowsAzure.ServiceBus >= 3.1.2"
     ],
-    "DNX,Version=v4.5.1": []
+    "DNX,Version=v4.5.1": [
+      "sc2iq.Models >= 1.0.0-*"
+    ]
   }
 }

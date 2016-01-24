@@ -3,9 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNet.Mvc;
-using jwtTest.Models;
-using jwtTest.Commands;
-using jwtTest.Infrastructure.Messaging;
 using jwtTest.Options;
 using Microsoft.Extensions.OptionsModel;
 using System.Net;
@@ -13,6 +10,8 @@ using System.Security.Cryptography;
 using Microsoft.ServiceBus;
 using Microsoft.ServiceBus.Messaging;
 using Newtonsoft.Json;
+using sc2iq.Models.Infrastructure.Commands;
+using sc2iq.Models.Infrastructure.Aggregates;
 
 // For more information on enabling Web API for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -48,18 +47,22 @@ namespace jwtTest.Controllers
         [HttpPost]
         public async Task<IActionResult> Post([FromBody]Poll poll)
         {
-            var pollCreateCommand = new PollCreateCommand()
+            var pollCreateCommand = new PollCreateCommand(poll)
             {
                 Title = poll.Title,
                 Description = poll.Description
             };
 
-            var tokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider("pollscommandssend", serviceBusOptions.ServiceBusPrimaryKey);
+            var tokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider("pollscommandssend", serviceBusOptions.pollscommandssend);
             var messageFactory = MessagingFactory.Create(ServiceBusEnvironment.CreateServiceUri("sb", serviceBusOptions.Messaging.Namespace, string.Empty), tokenProvider);
             var topicClient = messageFactory.CreateTopicClient("polls/commands");
 
-            var brokeredMessage = new BrokeredMessage(JsonConvert.SerializeObject(pollCreateCommand));
-            await topicClient.SendAsync(brokeredMessage);
+            var json = JsonConvert.SerializeObject(pollCreateCommand);
+            var message = new BrokeredMessage(json);
+            message.ContentType = "application/json";
+            message.Label = pollCreateCommand.GetType().ToString();
+
+            await topicClient.SendAsync(message);
 
             return Created(string.Empty, null);
         }

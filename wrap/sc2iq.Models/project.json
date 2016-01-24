@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0-*",
+  "frameworks": {
+    "dnx451": {
+      "bin": {
+        "assembly": "../../sc2iq.Models/obj/Debug/sc2iq.Models.dll",
+        "pdb": "../../sc2iq.Models/obj/Debug/sc2iq.Models.pdb"
+      }
+    }
+  }
+}

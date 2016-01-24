@@ -7,7 +7,7 @@ namespace jwtTest.Options
 {
     public class ServiceBusOptions
     {
-        public string ServiceBusPrimaryKey { get; set; }
+        public string pollscommandssend { get; set; }
         public Messaging Messaging { get; set; }
     }
 
