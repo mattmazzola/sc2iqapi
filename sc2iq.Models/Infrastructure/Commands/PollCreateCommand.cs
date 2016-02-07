@@ -14,5 +14,11 @@ namespace sc2iq.Models.Infrastructure.Commands
         {
             Id = Guid.NewGuid();
         }
+
+        public bool IsValid()
+        {
+            return !(string.IsNullOrWhiteSpace(Title)
+                || string.IsNullOrWhiteSpace(Description));
+        }
     }
 }

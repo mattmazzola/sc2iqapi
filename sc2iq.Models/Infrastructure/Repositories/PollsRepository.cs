@@ -1,4 +1,6 @@
-﻿using Microsoft.ServiceBus;
+﻿using FireSharp;
+using FireSharp.Config;
+using Microsoft.ServiceBus;
 using Microsoft.ServiceBus.Messaging;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Table;
@@ -31,6 +33,7 @@ namespace sc2iq.Models.Infrastructure.Repositories
             }
         }
 
+
         public void Find(string id)
         {
 
@@ -40,7 +43,7 @@ namespace sc2iq.Models.Infrastructure.Repositories
         {
             // Serialize object
             var aggregateJson = JsonConvert.SerializeObject(poll);
-            
+
             // Save aggregate in cache
             var cache = Connection.GetDatabase();
             await cache.SetAddAsync(poll.Id.ToString(), aggregateJson);
@@ -57,6 +60,31 @@ namespace sc2iq.Models.Infrastructure.Repositories
                 Title = poll.Title
             };
             await table.ExecuteAsync(TableOperation.Insert(pollCreatedEvent));
+
+            // Save updated aggregate to views.
+            var firebaseUrl = "https://sc2iq.firebaseio.com/";
+            var firebaseAuthId = "sc2iqapi";
+            var firebaseSecret = "7YT5WAgHiMsk5xPAB2oO2l4xKSMznoFQvuYiPgws";
+            var now = DateTime.UtcNow;
+            var expiration = now.AddDays(1);
+            Console.WriteLine($"expiration: {expiration}");
+
+            var authPayload = new Dictionary<string, object>()
+            {
+                { "uid", firebaseAuthId }
+            };
+            var tokenOptions = new Firebase.TokenOptions(expires: expiration);
+            var tokenGenerator = new Firebase.TokenGenerator(firebaseSecret);
+            var token = tokenGenerator.CreateToken(authPayload, tokenOptions);
+
+            var firebaseConfig = new FirebaseConfig()
+            {
+                AuthSecret = token,
+                BasePath = firebaseUrl
+            };
+
+            var firebaseClient = new FirebaseClient(firebaseConfig);
+            await firebaseClient.PushAsync("polls", poll);
 
             // Send message to event topic that poll was saved.
             var tokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider("pollseventssend", ConfigurationManager.AppSettings["pollseventsend"]);

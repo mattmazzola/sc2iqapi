@@ -15,10 +15,6 @@ namespace sc2iq.WebJob
         public async static void ProcessPollsCommandsOnMessage([ServiceBusTrigger("polls/commands", "all", AccessRights.Listen)] BrokeredMessage message, TextWriter log)
         {
             var json = message.GetBody<string>();
-
-            Console.WriteLine($"ContentType: {message.ContentType}");
-            Console.WriteLine($"Label: {message.Label}");
-
             log.WriteLine(message);
             Console.WriteLine(json);
 
@@ -31,13 +27,16 @@ namespace sc2iq.WebJob
                     try
                     {
                         pollCreateCommand = JsonConvert.DeserializeObject<PollCreateCommand>(json);
-                        Console.WriteLine(pollCreateCommand);
-                        Console.WriteLine($"Title: {pollCreateCommand.Title}");
                     }
                     catch (Exception e)
                     {
                         await message.DeadLetterAsync($"Message could not be deserialized as type: {message.Label}", e.ToString());
                         throw;
+                    }
+
+                    if(!pollCreateCommand.IsValid())
+                    {
+                        throw new InvalidDataException("Command is invalid");
                     }
 
                     var poll = new Poll(pollCreateCommand.Title, pollCreateCommand.Description);

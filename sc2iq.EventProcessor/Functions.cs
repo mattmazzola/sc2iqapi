@@ -5,6 +5,7 @@ using Microsoft.ServiceBus.Messaging;
 using Newtonsoft.Json;
 
 using sc2iq.Models.Infrastructure.Events;
+using sc2iq.Models.Infrastructure.Repositories;
 
 namespace sc2iq.EventProcessor
 {
@@ -13,10 +14,6 @@ namespace sc2iq.EventProcessor
         public async static void ProcessPollsEventsOnMessage([ServiceBusTrigger("polls/events", "all", AccessRights.Listen)] BrokeredMessage message, TextWriter log)
         {
             var json = message.GetBody<string>();
-
-            Console.WriteLine($"ContentType: {message.ContentType}");
-            Console.WriteLine($"Label: {message.Label}");
-
             log.WriteLine(message);
             Console.WriteLine(json);
 
@@ -29,8 +26,6 @@ namespace sc2iq.EventProcessor
                     try
                     {
                         pollCreatedEvent = JsonConvert.DeserializeObject<PollCreatedEvent>(json);
-                        Console.WriteLine(pollCreatedEvent);
-                        Console.WriteLine($"Title: {pollCreatedEvent.Title}");
                     }
                     catch(Exception e)
                     {
