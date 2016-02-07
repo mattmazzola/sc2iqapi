@@ -8,15 +8,12 @@ using System.Threading.Tasks;
 
 namespace sc2iq.Models.Infrastructure.Events
 {
-    public class PollCreatedEvent : TableEntity
+    public class PollCreatedEvent : PollEvent
     {
-        public Guid Id { get; set; }
         public string Title { get; set; }
 
-        public PollCreatedEvent()
+        public PollCreatedEvent(string pollId) : base(pollId)
         {
-            PartitionKey = "poll";
-            RowKey = Guid.NewGuid().ToString();
         }
     }
 }

@@ -119,7 +119,11 @@
   <ItemGroup>
     <Compile Include="Infrastructure\Aggregates\Poll.cs" />
     <Compile Include="Infrastructure\Commands\PollCreateCommand.cs" />
+    <Compile Include="Infrastructure\Commands\PollVoteAddCommand.cs" />
+    <Compile Include="Infrastructure\Commands\PollVoteRemoveCommand.cs" />
     <Compile Include="Infrastructure\Events\PollCreatedEvent.cs" />
+    <Compile Include="Infrastructure\Events\PollEvent.cs" />
+    <Compile Include="Infrastructure\Events\PollVoteAddedEvent.cs" />
     <Compile Include="Infrastructure\Messaging\Envelope.cs" />
     <Compile Include="Infrastructure\Messaging\ICommand.cs" />
     <Compile Include="Infrastructure\Messaging\ICommandBus.cs" />

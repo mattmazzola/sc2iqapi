@@ -45,6 +45,27 @@ namespace sc2iq.WebJob
 
                     await message.CompleteAsync();
                 }
+                else if (message.Label.Equals(typeof(PollVoteAddCommand).ToString()))
+                {
+                    PollVoteAddCommand pollVoteAddCommand = null;
+
+                    try
+                    {
+                        pollVoteAddCommand = JsonConvert.DeserializeObject<PollVoteAddCommand>(json);
+                    }
+                    catch (Exception e)
+                    {
+                        await message.DeadLetterAsync($"Message could not be deserialized as type: {message.Label}", e.ToString());
+                        throw;
+                    }
+
+                    var repository = new PollsRepository();
+                    var poll = await repository.Find(pollVoteAddCommand.PollId);
+                    poll.AddVote();
+                    repository.Save(poll);
+
+                    await message.CompleteAsync();
+                }
             }
         }
     }

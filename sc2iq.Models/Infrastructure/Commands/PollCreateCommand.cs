@@ -1,5 +1,4 @@
-﻿using sc2iq.Models.Infrastructure.Aggregates;
-using sc2iq.Models.Infrastructure.Messaging;
+﻿using sc2iq.Models.Infrastructure.Messaging;
 using System;
 
 namespace sc2iq.Models.Infrastructure.Commands

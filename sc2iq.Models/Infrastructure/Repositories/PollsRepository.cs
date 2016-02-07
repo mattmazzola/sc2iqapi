@@ -34,9 +34,28 @@ namespace sc2iq.Models.Infrastructure.Repositories
         }
 
 
-        public void Find(string id)
+        public async Task<Poll> Find(string id)
         {
+            // Find aggregate in cache
+            var cache = Connection.GetDatabase();
+            string json = await cache.StringGetAsync(id);
 
+            if(string.IsNullOrEmpty(json))
+            {
+                // Find aggregate by replaying events
+                var storageAccount = CloudStorageAccount.Parse(ConfigurationManager.AppSettings["StorageConnectionString"]);
+                var tableClient = storageAccount.CreateCloudTableClient();
+                var table = tableClient.GetTableReference("events");
+
+                var query = new TableQuery<PollEvent>()
+                    .Where(TableQuery.GenerateFilterCondition("PartitionKey", QueryComparisons.Equal, PollEvent.GetPartitionKey(id)));
+
+                var events = table.ExecuteQuery(query);
+            }
+
+            var poll = JsonConvert.DeserializeObject<Poll>(json);
+
+            return poll;
         }
 
         public async void Save(Poll poll)
@@ -46,7 +65,7 @@ namespace sc2iq.Models.Infrastructure.Repositories
 
             // Save aggregate in cache
             var cache = Connection.GetDatabase();
-            await cache.SetAddAsync(poll.Id.ToString(), aggregateJson);
+            await cache.StringSetAsync(poll.Id.ToString(), aggregateJson);
 
             // Save aggregate in event store.
             var storageAccount = CloudStorageAccount.Parse(ConfigurationManager.AppSettings["StorageConnectionString"]);
@@ -54,12 +73,21 @@ namespace sc2iq.Models.Infrastructure.Repositories
             var table = tableClient.GetTableReference("events");
             await table.CreateIfNotExistsAsync();
 
-            var pollCreatedEvent = new PollCreatedEvent()
+            PollEvent pollEvent;
+
+            if(poll.Votes == 0)
             {
-                Id = poll.Id,
-                Title = poll.Title
-            };
-            await table.ExecuteAsync(TableOperation.Insert(pollCreatedEvent));
+                pollEvent = new PollCreatedEvent(poll.Id.ToString())
+                {
+                    Title = poll.Title
+                };
+            }
+            else
+            {
+                pollEvent = new PollVoteAddedEvent(poll.Id.ToString());
+            }
+
+            await table.ExecuteAsync(TableOperation.Insert(pollEvent));
 
             // Save updated aggregate to views.
             var firebaseUrl = "https://sc2iq.firebaseio.com/";
@@ -91,10 +119,10 @@ namespace sc2iq.Models.Infrastructure.Repositories
             var messageFactory = MessagingFactory.Create(ServiceBusEnvironment.CreateServiceUri("sb", ConfigurationManager.AppSettings["namespace"], string.Empty), tokenProvider);
             var topicClient = messageFactory.CreateTopicClient("polls/events");
 
-            var eventJson = JsonConvert.SerializeObject(pollCreatedEvent);
+            var eventJson = JsonConvert.SerializeObject(pollEvent);
             var message = new BrokeredMessage(eventJson);
             message.ContentType = "application/json";
-            message.Label = pollCreatedEvent.GetType().ToString();
+            message.Label = pollEvent.GetType().ToString();
 
             await topicClient.SendAsync(message);
         }
