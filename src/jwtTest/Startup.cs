@@ -136,6 +136,16 @@ namespace jwtTest
                  opts.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
              });
 
+            services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAllOrigins", builder =>
+                {
+                    builder.AllowAnyOrigin();
+                    builder.AllowAnyMethod();
+                    builder.AllowAnyHeader();
+                });
+            });
+
             services.AddOptions();
             services.Configure<ServiceBusOptions>(Configuration);
         }
@@ -145,6 +155,8 @@ namespace jwtTest
         {
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
+
+            app.UseCors("AllowAllOrigins");
 
             app.UseIISPlatformHandler();
 

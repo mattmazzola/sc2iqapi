@@ -1,4 +1,5 @@
-﻿using System;
+﻿using sc2iq.Models.Infrastructure.Events;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,34 +7,51 @@ using System.Threading.Tasks;
 
 namespace sc2iq.Models.Infrastructure.Aggregates
 {
-    public class Poll
+    public class Poll : EventSourced
     {
-        public Guid Id { get; set; }
         public string Title { get; set; }
         public string Description { get; set; }
         public uint Votes { get; private set; }
 
-        public Poll(string title, string description)
+        protected Poll(Guid id) : base(id)
         {
-            Description = description;
-            Id = Guid.NewGuid();
-            Title = title;
-            Votes = 0;
+            base.Handles<PollVoteAddedEvent>(this.OnVoteAdded);
+            base.Handles<PollVoteAddedEvent>(this.OnVoteAdded);
         }
 
-        public void AddVote()
+        public Poll(string title, string descrption)
+            : this(Guid.NewGuid())
         {
-            Votes++;
+            this.Update(new PollCreatedEvent() {
+                SourceId = this.Id,
+                Title = title,
+                Description = descrption
+            });
         }
 
-        public void RemoveVote()
+        public void VoteAdd()
+        {
+            this.Update(new PollVoteAddedEvent() { SourceId = this.Id });
+        }
+
+        public void VoteRemove()
         {
             if(Votes == 0)
             {
                 throw new InvalidOperationException("Cannot remove vote from poll because votes is already at 0.");
             }
 
-            Votes--;
+            this.Update(new PollVoteRemovedEvent() { SourceId = this.Id });
+        }
+
+        private void OnVoteAdded(PollVoteAddedEvent e)
+        {
+            this.Votes++;
+        }
+
+        private void OnVoteRemoved(PollVoteRemovedEvent e)
+        {
+            this.Votes--;
         }
     }
 }

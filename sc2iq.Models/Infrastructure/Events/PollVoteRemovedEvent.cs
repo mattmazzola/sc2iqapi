@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace sc2iq.Models.Infrastructure.Events
 {
-    public class PollVoteAddedEvent : PollEvent
+    public class PollVoteRemovedEvent : PollEvent
     {
-        public PollVoteAddedEvent() : base()
+        public PollVoteRemovedEvent() : base()
         {
         }
     }

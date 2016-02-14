@@ -61,7 +61,13 @@ namespace sc2iq.WebJob
 
                     var repository = new PollsRepository();
                     var poll = await repository.Find(pollVoteAddCommand.PollId);
-                    poll.AddVote();
+
+                    if(poll == null)
+                    {
+                        throw new Exception($"Could not find poll with id: {pollVoteAddCommand.PollId}");
+                    }
+
+                    poll.VoteAdd();
                     repository.Save(poll);
 
                     await message.CompleteAsync();

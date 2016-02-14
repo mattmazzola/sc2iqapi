@@ -11,8 +11,9 @@ namespace sc2iq.Models.Infrastructure.Events
     public class PollCreatedEvent : PollEvent
     {
         public string Title { get; set; }
+        public string Description { get; set; }
 
-        public PollCreatedEvent(string pollId) : base(pollId)
+        public PollCreatedEvent()
         {
         }
     }

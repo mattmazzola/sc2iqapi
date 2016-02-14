@@ -1,4 +1,5 @@
 ﻿using Microsoft.WindowsAzure.Storage.Table;
+using sc2iq.Models.Infrastructure.Aggregates;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace sc2iq.Models.Infrastructure.Events
 {
-    public class PollEvent : TableEntity
+    public class PollEvent : VersionedEvent
     {
         public Guid Id { get; set; }
 
@@ -15,15 +16,10 @@ namespace sc2iq.Models.Infrastructure.Events
         {
         }
 
-        public PollEvent(string pollId)
-        {
-            PartitionKey = GetPartitionKey(pollId);
-            RowKey = Guid.NewGuid().ToString();
-        }
 
-        public static string GetPartitionKey(string pollId)
+        public PollEventTableEntity ToTableEntity()
         {
-            return $"poll-{pollId}";
+            return new PollEventTableEntity(this.Id, this.SourceId);
         }
     }
 }

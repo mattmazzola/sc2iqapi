@@ -117,13 +117,20 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Infrastructure\Aggregates\EventSourced.cs" />
+    <Compile Include="Infrastructure\Aggregates\IEvent.cs" />
+    <Compile Include="Infrastructure\Aggregates\IEventSourced.cs" />
+    <Compile Include="Infrastructure\Aggregates\IVersionedEvent.cs" />
     <Compile Include="Infrastructure\Aggregates\Poll.cs" />
+    <Compile Include="Infrastructure\Aggregates\VersionedEvent.cs" />
     <Compile Include="Infrastructure\Commands\PollCreateCommand.cs" />
     <Compile Include="Infrastructure\Commands\PollVoteAddCommand.cs" />
     <Compile Include="Infrastructure\Commands\PollVoteRemoveCommand.cs" />
     <Compile Include="Infrastructure\Events\PollCreatedEvent.cs" />
     <Compile Include="Infrastructure\Events\PollEvent.cs" />
+    <Compile Include="Infrastructure\Events\PollEventTableEntity.cs" />
     <Compile Include="Infrastructure\Events\PollVoteAddedEvent.cs" />
+    <Compile Include="Infrastructure\Events\PollVoteRemovedEvent.cs" />
     <Compile Include="Infrastructure\Messaging\Envelope.cs" />
     <Compile Include="Infrastructure\Messaging\ICommand.cs" />
     <Compile Include="Infrastructure\Messaging\ICommandBus.cs" />
