@@ -7,6 +7,14 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Principal;
 using Microsoft.AspNet.Authorization;
+using Newtonsoft.Json.Linq;
+using System.Net.Http;
+using System.Text;
+using jwtTest.Models;
+using System.Net.Http.Headers;
+using Microsoft.Extensions.OptionsModel;
+using jwtTest.Options;
+using Newtonsoft.Json;
 
 // For more information on enabling Web API for empty projects, visit http://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -17,12 +25,15 @@ namespace jwtTest.Controllers
     {
         private readonly TokenAuthOptions tokenOptions;
 
-        public TokenController(TokenAuthOptions tokenOptions)
+        public TokenController(TokenAuthOptions tokenOptions, IOptions<Secrets> optionsAccessor)
         {
             this.tokenOptions = tokenOptions;
+            Options = optionsAccessor.Value;
             //this.bearerOptions = options.Value;
             //this.signingCredentials = signingCredentials;
         }
+
+        Secrets Options { get; }
 
         /// <summary>
         /// Check if currently authenticated. Will throw an exception of some sort which shoudl be caught by a general
@@ -68,28 +79,41 @@ namespace jwtTest.Controllers
             return new { authenticated = authenticated, user = user, entityId = entityId, token = token, tokenExpires = tokenExpires };
         }
 
-        public class AuthRequest
-        {
-            public string username { get; set; }
-            public string password { get; set; }
-        }
-
         /// <summary>
         /// Request a new token for a given username/password pair.
         /// </summary>
-        /// <param name="req"></param>
+        /// <param name="oauthTokenData"></param>
         /// <returns></returns>
         [HttpPost]
-        public dynamic Post([FromBody] AuthRequest req)
+        public async Task<IActionResult> Post([FromBody]OauthTokenData oauthTokenData)
         {
-            // Obviously, at this point you need to validate the username and password against whatever system you wish.
-            if ((req.username == "TEST" && req.password == "TEST") || (req.username == "TEST2" && req.password == "TEST"))
-            {
-                DateTime? expires = DateTime.UtcNow.AddMinutes(2);
-                var token = GetToken(req.username, expires);
-                return new { authenticated = true, entityId = 1, token = token, tokenExpires = expires };
-            }
-            return new { authenticated = false };
+            var formUrlEncodedContent = $"grant_type=authorization_code&scope={oauthTokenData.Scope}&code={oauthTokenData.Code}&redirect_uri={oauthTokenData.RedirectUri}";
+
+            var httpClient = new HttpClient();
+
+            var request = new HttpRequestMessage(HttpMethod.Post, "https://us.battle.net/oauth/token");
+            request.Content = new StringContent(formUrlEncodedContent, Encoding.UTF8, "application/x-www-form-urlencoded");
+
+            var basicAuth = $"{oauthTokenData.ClientId}:{Options.BattlenetClientSecret}";
+            var bytes = Encoding.UTF8.GetBytes(basicAuth);
+            var base64 = Convert.ToBase64String(bytes);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Basic", base64);
+
+            var response = await httpClient.SendAsync(request);
+
+            response.EnsureSuccessStatusCode();
+
+            var jsonString = await response.Content.ReadAsStringAsync();
+            var battleNetAuthentication = JsonConvert.DeserializeObject<BattleNetAuthentication>(jsonString);
+
+            var expires = DateTime.UtcNow.AddSeconds(battleNetAuthentication.Expires);
+            var token = GetToken("FakeUserName", expires);
+
+            return Json(new {
+                sc2iqToken = token,
+                battletNetToken = battleNetAuthentication.AccessToken,
+                expires
+            });
         }
 
         private string GetToken(string user, DateTime? expires)

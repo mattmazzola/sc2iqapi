@@ -148,6 +148,7 @@ namespace jwtTest
 
             services.AddOptions();
             services.Configure<ServiceBusOptions>(Configuration);
+            services.Configure<Secrets>(Configuration);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline

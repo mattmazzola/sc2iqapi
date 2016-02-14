@@ -15,4 +15,9 @@ namespace jwtTest.Options
     {
         public string Namespace { get; set; }
     }
+
+    public class Secrets
+    {
+        public string BattlenetClientSecret { get; set; }
+    }
 }
