@@ -138,11 +138,12 @@ namespace jwtTest
 
             services.AddCors(options =>
             {
-                options.AddPolicy("AllowAllOrigins", builder =>
+                options.AddPolicy("AllowAny", builder =>
                 {
-                    builder.AllowAnyOrigin();
-                    builder.AllowAnyMethod();
-                    builder.AllowAnyHeader();
+                    builder
+                        .AllowAnyOrigin()
+                        .AllowAnyMethod()
+                        .AllowAnyHeader();
                 });
             });
 
@@ -157,7 +158,7 @@ namespace jwtTest
             loggerFactory.AddConsole(Configuration.GetSection("Logging"));
             loggerFactory.AddDebug();
 
-            app.UseCors("AllowAllOrigins");
+            app.UseCors("AllowAny");
 
             app.UseIISPlatformHandler();
 

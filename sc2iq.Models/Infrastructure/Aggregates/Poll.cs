@@ -15,6 +15,7 @@ namespace sc2iq.Models.Infrastructure.Aggregates
 
         protected Poll(Guid id) : base(id)
         {
+            base.Handles<PollCreatedEvent>(this.OnCreated);
             base.Handles<PollVoteAddedEvent>(this.OnVoteAdded);
             base.Handles<PollVoteAddedEvent>(this.OnVoteAdded);
         }
@@ -42,6 +43,11 @@ namespace sc2iq.Models.Infrastructure.Aggregates
             }
 
             this.Update(new PollVoteRemovedEvent() { SourceId = this.Id });
+        }
+
+        private void OnCreated(PollCreatedEvent e)
+        {
+            // empty
         }
 
         private void OnVoteAdded(PollVoteAddedEvent e)

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,7 +8,8 @@ namespace jwtTest.Models
 {
     public class User
     {
-        public int Id { get; set; }
+        [JsonProperty("id")]
+        public string Id { get; set; }
         public string BattleNetId { get; set; }
         public int PointsEarned { get; set; }
         public int PointsSpent { get; set; }

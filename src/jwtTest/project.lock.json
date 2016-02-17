@@ -869,6 +869,18 @@
           "lib/net451/Microsoft.AspNet.WebUtilities.dll": {}
         }
       },
+      "Microsoft.Azure.DocumentDB/1.5.2": {
+        "type": "package",
+        "dependencies": {
+          "Newtonsoft.Json": "5.0.7"
+        },
+        "compile": {
+          "lib/net40/Microsoft.Azure.Documents.Client.dll": {}
+        },
+        "runtime": {
+          "lib/net40/Microsoft.Azure.Documents.Client.dll": {}
+        }
+      },
       "Microsoft.CodeAnalysis.Analyzers/1.0.0": {
         "type": "package",
         "frameworkAssemblies": [
@@ -2666,6 +2678,18 @@
         },
         "runtime": {
           "lib/net451/Microsoft.AspNet.WebUtilities.dll": {}
+        }
+      },
+      "Microsoft.Azure.DocumentDB/1.5.2": {
+        "type": "package",
+        "dependencies": {
+          "Newtonsoft.Json": "5.0.7"
+        },
+        "compile": {
+          "lib/net40/Microsoft.Azure.Documents.Client.dll": {}
+        },
+        "runtime": {
+          "lib/net40/Microsoft.Azure.Documents.Client.dll": {}
         }
       },
       "Microsoft.CodeAnalysis.Analyzers/1.0.0": {
@@ -4467,6 +4491,18 @@
           "lib/net451/Microsoft.AspNet.WebUtilities.dll": {}
         }
       },
+      "Microsoft.Azure.DocumentDB/1.5.2": {
+        "type": "package",
+        "dependencies": {
+          "Newtonsoft.Json": "5.0.7"
+        },
+        "compile": {
+          "lib/net40/Microsoft.Azure.Documents.Client.dll": {}
+        },
+        "runtime": {
+          "lib/net40/Microsoft.Azure.Documents.Client.dll": {}
+        }
+      },
       "Microsoft.CodeAnalysis.Analyzers/1.0.0": {
         "type": "package",
         "frameworkAssemblies": [
@@ -6020,6 +6056,17 @@
         "Microsoft.AspNet.WebUtilities.nuspec"
       ]
     },
+    "Microsoft.Azure.DocumentDB/1.5.2": {
+      "type": "package",
+      "sha512": "p9ClXOOw11CpJycTPGzZTuFFe8A51+Myn2n9sV5LUMbO+7XzaTmiia59glsVPZA4Y2Yg5g/BqJHE5qQ8LjeY1Q==",
+      "files": [
+        "lib/net40/Microsoft.Azure.Documents.Client.dll",
+        "lib/net40/Microsoft.Azure.Documents.Client.XML",
+        "Microsoft.Azure.DocumentDB.1.5.2.nupkg",
+        "Microsoft.Azure.DocumentDB.1.5.2.nupkg.sha512",
+        "Microsoft.Azure.DocumentDB.nuspec"
+      ]
+    },
     "Microsoft.CodeAnalysis.Analyzers/1.0.0": {
       "type": "package",
       "sha512": "E7VdmGw6xO3VHWapC+pNLZmo6yncS53UY3bmb5WZm9wliJBB1A6brgzKA4fcqiLrmJFx71r0M2zEbRDphRLUNg==",
@@ -7444,7 +7491,8 @@
       "System.IdentityModel.Tokens >= 5.0.0-rc1-211161024",
       "System.IdentityModel.Tokens.Jwt >= 5.0.0-rc1-211161024",
       "Microsoft.WindowsAzure.ConfigurationManager >= 3.2.0",
-      "WindowsAzure.ServiceBus >= 3.1.2"
+      "WindowsAzure.ServiceBus >= 3.1.2",
+      "Microsoft.Azure.DocumentDB >= 1.5.2"
     ],
     "DNX,Version=v4.5.1": [
       "sc2iq.Models >= 1.0.0-*"

@@ -20,7 +20,8 @@
     "System.IdentityModel.Tokens": "5.0.0-rc1-211161024",
     "System.IdentityModel.Tokens.Jwt": "5.0.0-rc1-211161024",
     "Microsoft.WindowsAzure.ConfigurationManager": "3.2.0",
-    "WindowsAzure.ServiceBus": "3.1.2"
+    "WindowsAzure.ServiceBus": "3.1.2",
+    "Microsoft.Azure.DocumentDB": "1.5.2"
   },
 
   "commands": {
