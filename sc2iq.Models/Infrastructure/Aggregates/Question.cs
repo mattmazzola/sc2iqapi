@@ -67,10 +67,20 @@ namespace sc2iq.Models.Infrastructure.Aggregates
 
         private void OnQuestionCreated(QuestionCreatedEvent e)
         {
-            // empty
+            this.Q = e.Q;
+            this.A1 = e.A1;
+            this.A2 = e.A2;
+            this.A3 = e.A3;
+            this.A4 = e.A4;
+            this.CorrectAnswerIndex = e.CorrectAnswerIndex;
+            this.Created = e.Created;
+            this.CreatedBy = e.CreatedBy;
+            this.Difficulty = e.Difficulty;
+            this.State = e.State;
+            this.Tags = e.Tags;
         }
 
-        private void OnVoteAdded(PollVoteAddedEvent e)
+        private void OnQuestionPublished(QuestionPublishedEvent e)
         {
             this.State = QuestionState.Published;
         }

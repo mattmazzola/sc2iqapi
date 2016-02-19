@@ -75,7 +75,10 @@ namespace jwtTest.Controllers
                 A1 = question.A1,
                 A2 = question.A2,
                 A3 = question.A3,
-                A4 = question.A4
+                A4 = question.A4,
+                Difficulty = question.Difficulty,
+                CorrectAnswerIndex = 1,
+                Tags = question.Tags
             };
 
             var tokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider("questionscommandssend", serviceBusOptions.questionscommandssend);

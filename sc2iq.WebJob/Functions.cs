@@ -73,6 +73,10 @@ namespace sc2iq.WebJob
                     await message.CompleteAsync();
                 }
             }
+            else
+            {
+                await message.DeadLetterAsync($"Message has ContentType that is not understood.", $"Message ContentType must be application/json. Message's ContentType was: {message.ContentType}");
+            }
         }
 
         public async static void ProcessQuestionsCommandsOnMessage([ServiceBusTrigger("questions/commands", "all", AccessRights.Listen)] BrokeredMessage message, TextWriter log)
@@ -97,9 +101,21 @@ namespace sc2iq.WebJob
                         throw;
                     }
 
-                    var poll = new Poll(pollCreateCommand.Title, pollCreateCommand.Description);
-                    var repository = new PollsRepository();
-                    repository.Save(poll);
+                    var question = new Question(
+                        questionCreateCommand.Q,
+                        questionCreateCommand.A1,
+                        questionCreateCommand.A2,
+                        questionCreateCommand.A3,
+                        questionCreateCommand.A4,
+                        questionCreateCommand.CorrectAnswerIndex,
+                        questionCreateCommand.Created,
+                        questionCreateCommand.CreatedBy,
+                        questionCreateCommand.Difficulty,
+                        (Models.Infrastructure.Aggregates.QuestionState)questionCreateCommand.State,
+                        questionCreateCommand.Tags
+                    );
+                    var repository = new QuestionsRepository();
+                    repository.Save(question);
 
                     await message.CompleteAsync();
                 }
@@ -130,6 +146,10 @@ namespace sc2iq.WebJob
 
                     await message.CompleteAsync();
                 }
+            }
+            else
+            {
+                await message.DeadLetterAsync($"Message has ContentType that is not understood.", $"Message ContentType must be application/json. Message's ContentType was: {message.ContentType}");
             }
         }
     }

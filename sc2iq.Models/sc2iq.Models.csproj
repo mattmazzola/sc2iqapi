@@ -122,20 +122,26 @@
     <Compile Include="Infrastructure\Aggregates\IEventSourced.cs" />
     <Compile Include="Infrastructure\Aggregates\IVersionedEvent.cs" />
     <Compile Include="Infrastructure\Aggregates\Poll.cs" />
+    <Compile Include="Infrastructure\Aggregates\Question.cs" />
     <Compile Include="Infrastructure\Aggregates\VersionedEvent.cs" />
     <Compile Include="Infrastructure\Commands\PollCreateCommand.cs" />
     <Compile Include="Infrastructure\Commands\PollVoteAddCommand.cs" />
     <Compile Include="Infrastructure\Commands\PollVoteRemoveCommand.cs" />
     <Compile Include="Infrastructure\Commands\QuestionCreateCommand.cs" />
+    <Compile Include="Infrastructure\Commands\QuestionPublishCommand.cs" />
+    <Compile Include="Infrastructure\Documents\Question.cs" />
     <Compile Include="Infrastructure\Events\PollCreatedEvent.cs" />
     <Compile Include="Infrastructure\Events\PollEvent.cs" />
     <Compile Include="Infrastructure\Events\PollEventTableEntity.cs" />
     <Compile Include="Infrastructure\Events\PollVoteAddedEvent.cs" />
     <Compile Include="Infrastructure\Events\PollVoteRemovedEvent.cs" />
+    <Compile Include="Infrastructure\Events\QuestionCreatedEvent.cs" />
+    <Compile Include="Infrastructure\Events\QuestionPublishedEvent.cs" />
     <Compile Include="Infrastructure\Messaging\Envelope.cs" />
     <Compile Include="Infrastructure\Messaging\ICommand.cs" />
     <Compile Include="Infrastructure\Messaging\ICommandBus.cs" />
     <Compile Include="Infrastructure\Repositories\PollsRepository.cs" />
+    <Compile Include="Infrastructure\Repositories\QuestionsRepository.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
