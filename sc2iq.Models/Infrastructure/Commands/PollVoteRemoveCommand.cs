@@ -1,4 +1,5 @@
-﻿using System;
+﻿using sc2iq.Models.Infrastructure.Messaging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace sc2iq.Models.Infrastructure.Commands
 {
-    public class PollVoteRemoveCommand
+    public class PollVoteRemoveCommand : ICommand
     {
         public Guid Id { get; private set; }
         public string PollId { get; private set; }

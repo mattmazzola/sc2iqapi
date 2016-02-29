@@ -10,5 +10,12 @@ namespace sc2iq.Models.Infrastructure.Commands
     public class QuestionPublishCommand : ICommand
     {
         public Guid Id { get; set; }
+        public string QuestionId { get; set; }
+
+        public QuestionPublishCommand(string questionId)
+        {
+            Id = Guid.NewGuid();
+            QuestionId = questionId;
+        }
     }
 }

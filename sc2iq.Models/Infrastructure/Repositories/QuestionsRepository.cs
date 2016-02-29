@@ -29,6 +29,12 @@ namespace sc2iq.Models.Infrastructure.Repositories
             }
         }
 
+        public async Task<Question> Find(string questionId)
+        {
+            var question = new Question("q", "a1", "a2", "a3", "a4", 0, DateTimeOffset.UtcNow, "me", 3, QuestionState.Pending, new List<string>() { "tag1", "tag2" });
+            return await Task.FromResult(question);
+        }
+
         public async void Save(Question question)
         {
             // Serialize object

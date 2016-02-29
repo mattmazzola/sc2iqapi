@@ -9,11 +9,11 @@ namespace sc2iq.Models.Infrastructure.Events
 {
     public class PollEventTableEntity : TableEntity
     {
-        public PollEventTableEntity()
+        public PollEventTableEntity() : base()
         {
         }
 
-        public PollEventTableEntity(Guid Id, Guid SourceId)
+        public PollEventTableEntity(Guid Id, Guid SourceId) : base()
         {
             this.PartitionKey = GetPartitionKey(Id.ToString());
             this.RowKey = SourceId.ToString();

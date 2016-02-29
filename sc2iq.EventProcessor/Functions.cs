@@ -46,10 +46,6 @@ namespace sc2iq.EventProcessor
 
         public async static void ProcessQuestionsEventsOnMessage([ServiceBusTrigger("questions/events", "all", AccessRights.Listen)] BrokeredMessage message, TextWriter log)
         {
-            var json = message.GetBody<string>();
-            log.WriteLine(message);
-            Console.WriteLine(json);
-
             if (message.ContentType.Equals("application/json"))
             {
                 if (message.Label.Equals(typeof(QuestionCreatedEvent).ToString()))
@@ -58,6 +54,10 @@ namespace sc2iq.EventProcessor
 
                     try
                     {
+                        var json = message.GetBody<string>();
+                        log.WriteLine(message);
+                        Console.WriteLine(json);
+
                         questionCreatedEvent = JsonConvert.DeserializeObject<QuestionCreatedEvent>(json);
 
                         var question = new Question()
@@ -82,8 +82,8 @@ namespace sc2iq.EventProcessor
                     }
                     catch (Exception e)
                     {
-                        await message.DeadLetterAsync($"Message could not be deserialized as type: {message.Label}", e.ToString());
-                        throw;
+                        var clone = message.Clone();
+                        await clone.DeadLetterAsync($"Message processing failed.", e.ToString());
                     }
 
                     await message.CompleteAsync();

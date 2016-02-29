@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using sc2iq.Models.Infrastructure.Commands;
 using sc2iq.Models.Infrastructure.Repositories;
 using sc2iq.Models.Infrastructure.Aggregates;
+using sc2iq.Models.Infrastructure.CommandHandler;
 
 namespace sc2iq.WebJob
 {
@@ -14,64 +15,24 @@ namespace sc2iq.WebJob
     {
         public async static void ProcessPollsCommandsOnMessage([ServiceBusTrigger("polls/commands", "all", AccessRights.Listen)] BrokeredMessage message, TextWriter log)
         {
-            var json = message.GetBody<string>();
-            log.WriteLine(message);
-            Console.WriteLine(json);
-
             if(message.ContentType.Equals("application/json"))
             {
+                var pollCommandProcessor = new PollCommandProcessor();
+
                 if (message.Label.Equals(typeof(PollCreateCommand).ToString()))
                 {
-                    PollCreateCommand pollCreateCommand = null;
-
-                    try
-                    {
-                        pollCreateCommand = JsonConvert.DeserializeObject<PollCreateCommand>(json);
-                    }
-                    catch (Exception e)
-                    {
-                        await message.DeadLetterAsync($"Message could not be deserialized as type: {message.Label}", e.ToString());
-                        throw;
-                    }
-
-                    if(!pollCreateCommand.IsValid())
-                    {
-                        throw new InvalidDataException("Command is invalid");
-                    }
-
-                    var poll = new Poll(pollCreateCommand.Title, pollCreateCommand.Description);
-                    var repository = new PollsRepository();
-                    repository.Save(poll);
-
-                    await message.CompleteAsync();
+                    await pollCommandProcessor.ProcessCommand<PollCreateCommand>(message);
                 }
                 else if (message.Label.Equals(typeof(PollVoteAddCommand).ToString()))
                 {
-                    PollVoteAddCommand pollVoteAddCommand = null;
-
-                    try
-                    {
-                        pollVoteAddCommand = JsonConvert.DeserializeObject<PollVoteAddCommand>(json);
-                    }
-                    catch (Exception e)
-                    {
-                        await message.DeadLetterAsync($"Message could not be deserialized as type: {message.Label}", e.ToString());
-                        throw;
-                    }
-
-                    var repository = new PollsRepository();
-                    var poll = await repository.Find(pollVoteAddCommand.PollId);
-
-                    if(poll == null)
-                    {
-                        throw new Exception($"Could not find poll with id: {pollVoteAddCommand.PollId}");
-                    }
-
-                    poll.VoteAdd();
-                    repository.Save(poll);
-
-                    await message.CompleteAsync();
+                    await pollCommandProcessor.ProcessCommand<PollVoteAddCommand>(message);
                 }
+                else if (message.Label.Equals(typeof(PollVoteRemoveCommand).ToString()))
+                {
+                    await pollCommandProcessor.ProcessCommand<PollVoteRemoveCommand>(message);
+                }
+
+                await message.CompleteAsync();
             }
             else
             {
@@ -119,7 +80,7 @@ namespace sc2iq.WebJob
 
                     await message.CompleteAsync();
                 }
-                else if (message.Label.Equals(typeof(PollVoteAddCommand).ToString()))
+                else if (message.Label.Equals(typeof(QuestionPublishCommand).ToString()))
                 {
                     PollVoteAddCommand pollVoteAddCommand = null;
 
